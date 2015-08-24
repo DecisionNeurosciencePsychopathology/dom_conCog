@@ -1,4 +1,4 @@
-function [w, choice1, choice2,state, pos1, pos2 ,money, rts1, rts2]=MBMFtutorialPC_short()
+function [w, choice1, choice2,state, pos1, pos2 ,money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short()
 %MBMFtutorial
 % tutorial for sequential choice task
 % This is the PC version.
@@ -36,6 +36,7 @@ Priority(MaxPriority(w));
 %w=Screen('OpenWindow',0,[0 0 0]);
 
 totaltrials=20;    %total number of trials in the task
+shark_trials = 12; %total number of shark trials
 transprob = .8;    % probability of 'correct' transition
 
 [xres,yres] = Screen('windowsize',w);
@@ -188,6 +189,7 @@ pos2 = rand(1,totaltrials) > .5;        % positioning of second level boxes
 rts1 = zeros(1,totaltrials);            % first level RT
 rts2 = zeros(1,totaltrials);            % second level RT
 money = zeros(1,totaltrials);           % win
+money2 = zeros(1,shark_trials);          % win
 
 Screen('TextFont',w,'Helvetica');
 Screen('TextSize',w,48);
@@ -291,7 +293,7 @@ Screen('Flip',w,[]);
 KbWait([],2);
 
 %% Initial practice
-alien_trials = 30;
+alien_trials = 3;
 kickout = 0;
 % screen 15
 while kickout==0
@@ -425,7 +427,7 @@ while kickout==0
     DrawFormattedText(w,['Good luck! \n\n' 'Remember that 1 selects left and 0 selects right.'],'center',ytext,[],wrap);
     Screen('Flip',w);
     KbWait([],2);
-    DrawFormattedText(w,['You''re playing for real money now, \n\n' 'each treaure is worth $0.25.'],'center',ytext,[],wrap);
+    DrawFormattedText(w,['You''re playing for real money now, \n\n' 'each treasure is worth $0.25.'],'center',ytext,[],wrap);
     Screen('Flip',w);
     KbWait([],2)
     
@@ -434,7 +436,7 @@ while kickout==0
     % main experimental loop
     
     money = zeros(1,totaltrials);
-    for trial = 1:totaltrials %Number of rocket trials
+    for trial = 15:totaltrials %Number of rocket trials
         
         % first level
         level=0;
@@ -523,11 +525,11 @@ DrawFormattedText(w,['On some trials a Cosmic Shark' '\n\n' 'will attack and tak
 Screen('Flip',w);
 KbWait([],2);
 
-DrawFormattedText(w,['You will be warned of the possibility of ' '\n\n' 'the shark attacking, but will not know' '\n\n' 'when or if the attack will occur.' '\n\n'],'center',ytext,[],wrap);
+DrawFormattedText(w,['You will be warned of the possibility of ' '\n\n' 'the shark attacking, but will not know' '\n\n' 'when the attack will occur.' '\n\n'],'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
-DrawFormattedText(w,['You will also know when the shark is gone' '\n\n' 'When the shark leaves it will not' '\n\n' 'reappear until you see another warning'],'center',ytext,[],wrap);
+DrawFormattedText(w,['You will also know when the shark is gone.' '\n\n' 'When the shark leaves it will not' '\n\n' 'reappear until you see another warning'],'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
@@ -556,9 +558,6 @@ safe_scrn = Screen(w,'MakeTexture', safe_scrn);
 % Sound
 % Perform basic initialization of the sound driver:
 InitializePsychSound;
-
-shark_trials = 12;
-
 
 for trial = 1:shark_trials %Number of shark trials
     
@@ -620,9 +619,9 @@ for trial = 1:shark_trials %Number of shark trials
     end
     
     % outcome
-    money(trial) = rand < payoff(state(trial)-1,choice2(trial),trial);
+    money2(trial) = rand < payoff(state(trial)-1,choice2(trial),trial);
     
-    drawoutcome(money(trial),w,pos,leftstim,rightstim);
+    drawoutcome(money2(trial),w,pos,leftstim,rightstim);
     
     Screen('Flip',w);
     slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime;
@@ -644,13 +643,24 @@ for trial = 1:shark_trials %Number of shark trials
     
 end %End shark practice loop
 
-DrawFormattedText(w,['This is the end of the tutorial \n\n' 'Your total winnings are worth $10.50'],...
+%Figure out how much they won
+totalwon = sum(money) + sum(money2); 
+total_after_shark = (totalwon*.25)+ 10 - 10; %$10 endowment?
+total_before_scanner = total_after_shark + 20;
+
+DrawFormattedText(w,['End of the tutorial \n\n' 'Your total winnings are ',num2str(total_after_shark) ],... 
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
-DrawFormattedText(w,['You''re awarded an addional $25 for the scanner task \n\n'...
-    'Bringing your total to $35.50 when you enter \n\n' 'the scanner'],...
+DrawFormattedText(w,['You''re awarded an addional $20 for the scanner task \n\n'...
+    'Bringing your total to ',num2str(total_before_scanner),' when you enter \n\n' 'the scanner'],... 
+    'center',ytext,[],wrap);
+Screen('Flip',w);
+KbWait([],2);
+
+DrawFormattedText(w,['Once in the scanner each shark \n\n'...
+    'attacks will take $25'],...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);

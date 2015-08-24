@@ -2,7 +2,7 @@
 function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
-    rew_ons_sl, rew_ons_ms, payoff, question] = NPL_MBMFtaskPC(name, gender, dob, age, contingency, w)
+    rew_ons_sl, rew_ons_ms, payoff, question] = NPL_MBMFtaskPC(name, gender, dob, age, contingency, pre_total, w) 
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
@@ -23,6 +23,8 @@ transprob =.7;    % probability of 'correct' transition
 [xres,yres] = Screen('windowsize',0);
 xcenter = xres/2;
 ycenter = yres/2;
+
+ytext = round(1*yres/5);
 
 leftpos = xcenter-400;
 rightpos = xcenter+100;
@@ -282,7 +284,7 @@ jitter_time = 1.5; %default 1.5 seconds, we can change this to be an array
 Screen('TextFont',w,'Helvetica');
 Screen('TextSize',w,40);
 Screen('TextStyle',w,1);
-Screen('TextColor',w,[255 255 255]);
+Screen('TextColor',w,[255 0 0]); %Red font
 wrap = 80;
 
 % convert image arrays to textures
@@ -313,6 +315,13 @@ Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for
 logfile = fopen([name '_' date '.txt'], 'w');
 fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tSC_ID\tgender\tDOB\tage\twon\n');
 %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
+
+
+% Pre-Start screen
+DrawFormattedText(w,'Press any key to begin',...
+    'center',ytext);
+Screen('Flip',w);
+KbWait([],2);
 
 
 % % % % main experimental loop % % % % <-modify here!!!
@@ -448,12 +457,13 @@ end
 %rewardedtrials = randperm(totaltrials);
 %rewardedtrials = rewardedtrials(1:numrewardedtrials);
 %totalwon = sum(money(rewardedtrials));
-totalwon = sum(money);
+totalwon = sum(money)*.25 + pre_total - 25;
+
 
 
 % Ask the transition Question
 %DrawFormattedText(w,['Nice!  You found ',num2str(totalwon),' pieces of space treasure. \n\n' 'That''s worth $10! \n\n'],'center','center',[],wrap); %' ,num2str(ceil(totalwon*.05)), '
-DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won $10! \n\n'],'center','center',[],wrap); 
+DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won ',num2str(totalwon),'!'],'center','center',[],wrap); 
 Screen('Flip',w);
 KbWait([],2);
 
