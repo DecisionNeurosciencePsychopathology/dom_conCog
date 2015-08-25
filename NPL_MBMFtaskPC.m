@@ -17,10 +17,19 @@ global leftpos rightpos boxypos moneyypos moneyxpos animxpos animypos moneytime 
 tutorial_flag = 0;
 keyback = KbName('z');
 
+%Screen Resoultion
+% screenResolution=[1920 1200]; %Jon's PC
+
+% Open a new window.
+% [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
+% FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
+% slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
+
+
 totaltrials=200;    %total number of trials in the task
 transprob =.7;    % probability of 'correct' transition
 
-[xres,yres] = Screen('windowsize',0);
+[xres,yres] = Screen('windowsize',w);
 xcenter = xres/2;
 ycenter = yres/2;
 
