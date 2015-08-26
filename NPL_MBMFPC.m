@@ -6,7 +6,7 @@
 
 %SacklerNumber=input('Subject''s Sackler ID? ','s');
 % enter subject details
-name=input('Subject''s Sackler ID? (Please enter 5 numbers (ex 09999)):  ', 's');
+name=input('Subject''s ID? (Please enter 5 numbers (ex 09999)):  ', 's');
 gender = [];
 while (strcmp(gender,'m')==0 && strcmp(gender,'f')==0)
     gender = input('Subject''s Gender? (m or f): ','s');

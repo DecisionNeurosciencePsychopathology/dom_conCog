@@ -25,6 +25,8 @@ keyback = KbName('z');
 % FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
 % slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
 
+%FOR DEBUG purposes only, w should be populated from tutorial!
+w=Screen('OpenWindow',0,[0 0 0]);
 
 totaltrials=200;    %total number of trials in the task
 transprob =.7;    % probability of 'correct' transition
@@ -446,7 +448,7 @@ for trial = 1:totaltrials
     
     %Shark attack!!!
     if ismember(trial,attack)
-        [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+        [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
         Screen('Flip',w);

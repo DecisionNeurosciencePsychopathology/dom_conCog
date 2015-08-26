@@ -52,9 +52,9 @@ pos3_time = GetSecs+14;
 prev_sin =0;
 
 %Add in the sound code here
-[pahandle]=prep_sound('C:\kod\dom_conCog\sounds\warning_sound.wav');
+[pahandle]=prep_sound('sounds\warning_sound.wav');
 
-moviename = 'c:\kod\dom_conCog\behav\animations\shark_circling_1.mp4';
+moviename = '\behav\animations\shark_circling_1.mp4';
 
 % Start audio playback for 'repetitions' repetitions of the sound data,
 % start it immediately (0) and wait for the playback to start, return onset
