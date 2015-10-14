@@ -522,7 +522,7 @@ Screen('CloseAll')
 
 
 function shark_attack(w,cosmic_shark)
-        [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+        [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
         Screen('Flip',w);
