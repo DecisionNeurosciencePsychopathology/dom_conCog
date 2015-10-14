@@ -639,7 +639,6 @@ for trial = 1:shark_trials %Number of shark trials
     
     
     %Shark attack!!!
-<<<<<<< HEAD
     if ismember(trial,attack); shark_attack(w,cosmic_shark); end
 %     if ismember(trial,attack)
 %         [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
@@ -653,22 +652,6 @@ for trial = 1:shark_trials %Number of shark trials
 %         % Close the audio device:
 %         PsychPortAudio('Close', pahandle);
 %     end
-   
-=======
-    if ismember(trial,attack)
-        [pahandle, wav_time]=prep_sound('C:\Users\admin\Desktop\shark_task\dom_conCog\sounds\Monster_Gigante.wav');
-        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-        Screen('Flip',w);
-        WaitSecs(wav_time) %We can change the wait time to whatever...
-        % Stop playback:
-        PsychPortAudio('Stop', pahandle);
-        
-        % Close the audio device:
-        PsychPortAudio('Close', pahandle);
-    end
-    
->>>>>>> origin/master
 end %End shark practice loop
 
 %Figure out how much they won
