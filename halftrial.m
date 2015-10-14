@@ -1,6 +1,6 @@
-function [choice, rt, ons_sl, ons_ms, ch_sl, ch_ms, pos, stimleft,stimright, dimChoice,kickout] = halftrial(planetpic,pix, swap,window,unt,level,oldstim)
+function [choice, rt, ons_sl, ons_ms, ch_sl, ch_ms, pos, stimleft,stimright, dimChoice,kickout] = halftrial(planetpic,pix, ~,window,~,level,oldstim)
 
-global leftpos rightpos boxypos choicetime isitime moneytime ititime;
+global leftpos rightpos boxypos choicetime isitime moneytime ititime shark_attack_block;
 
 % run half a trial, ie one state
 % set up pictures, swapping sides accoridng to swap
@@ -15,6 +15,10 @@ if (level==1)
 end
 Screen('DrawTexture',window,stimleft.norm,[],[leftpos boxypos leftpos+300 boxypos+300]);
 Screen('DrawTexture',window,stimright.norm,[],[rightpos boxypos rightpos+300 boxypos+300]);
+
+if shark_attack_block
+    Screen('DrawTexture',window,stimleft.shark,[],[660 450 960 620]);
+end
 
 %GetRidofTHisMaybe
 [ons_sl, ons_ms] = slicewrapper;

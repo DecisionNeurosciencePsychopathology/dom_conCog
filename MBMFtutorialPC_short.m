@@ -7,7 +7,7 @@ function [w, choice1, choice2,state, pos1, pos2 ,money, rts1, rts2, total_before
 %   find all \n\n' and replace w/ \n' (corrects font spacing)
 %   change font size from 20 to 30
 
-clear all
+%clear all;
 
 HideCursor;
 
@@ -18,9 +18,10 @@ rng('shuffle');
 % specify the task parameters (name was added here
 global leftpos rightpos boxypos moneyxpos moneyypos animxpos animypos moneytime ...
     isitime ititime choicetime moneypic losepic inmri keyleft keyright starttime...
-    keyback tutorial_flag;
+    keyback tutorial_flag shark_attack_block;
 
 tutorial_flag = 1;
+shark_attack_block=0;
 
 %Screen Resoultion
 screenResolution=[1920 1200]; %Jon's PC
@@ -157,7 +158,22 @@ earth = imread('behav/earth.jpg');
 planetR = imread('tut/tutgreenplanet.jpg');
 planetP = imread('tut/tutyellowplanet.jpg');
 
+%shark textures
+%Images
+cosmic_shark = imread('behav/cosmic_shark.png');
+[shark_fin,~,alpha]  = imread('behav/fin_final.png');
+shark_fin(:,:,4) = alpha(:,:);
+shark_fin_rev = flipdim(shark_fin ,2);
+galaxy_img = imread('behav/Spiral_galaxy.jpg');
+safe_scrn = imread('behav/Safe_screen.png');
 
+%Textures
+cosmic_shark = Screen(w,'MakeTexture', cosmic_shark);
+shark_fin = Screen(w,'MakeTexture', shark_fin);
+
+shark_fin_rev = Screen(w,'MakeTexture', shark_fin_rev);
+galaxy_img = Screen(w,'MakeTexture', galaxy_img);
+safe_scrn = Screen(w,'MakeTexture', safe_scrn);
 
 % convert image arrays to textures
 for i = 1:3
@@ -167,6 +183,7 @@ for i = 1:3
         s(i,j).act1 = Screen(w,'MakeTexture',t(i,j).act1);
         s(i,j).act2 = Screen(w,'MakeTexture',t(i,j).act2);
         s(i,j).spoiled = Screen(w,'MakeTexture',t(i,j).spoiled);
+        s(i,j).shark = shark_fin;
     end
 end
 
@@ -177,8 +194,6 @@ planetR = Screen(w,'MakeTexture',planetR);
 planetP = Screen(w,'MakeTexture',planetP);
 
 Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for transparency
-
-
 
 % initialise data vectors
 choice1 = zeros(1,totaltrials);         % first level choice
@@ -236,11 +251,12 @@ KbWait([],2);
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
 Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
 Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
+%%Screen('DrawTexture',w,s(1,1).shark,[],[660 450 960 620]);
 DrawFormattedText(w,['Order the left alien by pressing the 1 key \n\n' 'and the right alien by pressing the 0 key. \n\n\n' 'Practice a few times now.'],'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
-for t =1:5 %Number of box trials
+for t =1:3 %Number of box trials
     pos = selectbox(inf);
     xander = find((pos==[1 2])==0);
     for i = 1:5
@@ -293,7 +309,7 @@ Screen('Flip',w,[]);
 KbWait([],2);
 
 %% Initial practice
-alien_trials = 3;
+alien_trials = 30;
 kickout = 0;
 % screen 15
 while kickout==0
@@ -436,7 +452,7 @@ while kickout==0
     % main experimental loop
     
     money = zeros(1,totaltrials);
-    for trial = 15:totaltrials %Number of rocket trials
+    for trial = 1:totaltrials %Number of rocket trials
         
         % first level
         level=0;
@@ -444,7 +460,7 @@ while kickout==0
         [choice1(trial), rts1(trial),~,~,~,~,~,~,~, lastChoice, kickout] = halftrial(planetpic, s(1,:), pos1(trial),w,[],level);
         
         
-        if kickout; break; end %Back button
+        if kickout; break; end %Back button (see slectbox.m)
         
         if ~choice1(trial) % spoiled
             %we pick up a half-trial of extra time here; not sure what to do about this
@@ -542,28 +558,19 @@ KbWait([],2);
 %Shark variables and textures
 warnings = 1;
 attack =8;
-%Images
-cosmic_shark = imread('behav/cosmic_shark.png');
-shark_fin = imread('behav/fin_final.png');
-shark_fin_rev = flipdim(shark_fin ,2);
-galaxy_img = imread('behav/Spiral_galaxy.jpg');
-safe_scrn = imread('behav/Safe_screen.png');
-%Textures
-cosmic_shark = Screen(w,'MakeTexture', cosmic_shark);
-shark_fin = Screen(w,'MakeTexture', shark_fin);
-shark_fin_rev = Screen(w,'MakeTexture', shark_fin_rev);
-galaxy_img = Screen(w,'MakeTexture', galaxy_img);
-safe_scrn = Screen(w,'MakeTexture', safe_scrn);
+%Its a shark attack block
+shark_attack_block=1;
 
 % Sound
 % Perform basic initialization of the sound driver:
 InitializePsychSound;
 
 for trial = 1:shark_trials %Number of shark trials
-    
+
     Screen('Flip',w);
     %After shark attack
     if ismember(trial, attack+1)
+        shark_attack_block=0; %remove shark attack threat
         DrawFormattedText(w,'You lose $10!','center','center',[255, 0, 0, 255],wrap);
         Screen('Flip',w);
         WaitSecs((ititime*3)/1000) %We can change the wait time to whatever...
@@ -594,7 +601,8 @@ for trial = 1:shark_trials %Number of shark trials
     if ~choice1(trial) % spoiled
         %we pick up a half-trial of extra time here; not sure what to do about this
         slicewait = slicewait + choicetime + isitime + moneytime + ititime;
-        
+        %Was skipping over attack if no response
+        if ismember(trial,attack); shark_attack(w,cosmic_shark); end
         continue;
     end
     
@@ -615,6 +623,8 @@ for trial = 1:shark_trials %Number of shark trials
     
     if ~choice2(trial) % spoiled
         slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime;
+        %Was skipping over attack if no response
+        if ismember(trial,attack); shark_attack(w,cosmic_shark); end
         continue;
     end
     
@@ -628,19 +638,20 @@ for trial = 1:shark_trials %Number of shark trials
     
     
     %Shark attack!!!
-    if ismember(trial,attack)
-        [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
-        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-        Screen('Flip',w);
-        WaitSecs(wav_time) %We can change the wait time to whatever...
-        % Stop playback:
-        PsychPortAudio('Stop', pahandle);
-        
-        % Close the audio device:
-        PsychPortAudio('Close', pahandle);
-    end
-    
+    if ismember(trial,attack); shark_attack(w,cosmic_shark); end
+%     if ismember(trial,attack)
+%         [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+%         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+%         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+%         Screen('Flip',w);
+%         WaitSecs(wav_time) %We can change the wait time to whatever...
+%         % Stop playback:
+%         PsychPortAudio('Stop', pahandle);
+%         
+%         % Close the audio device:
+%         PsychPortAudio('Close', pahandle);
+%     end
+   
 end %End shark practice loop
 
 %Figure out how much they won
@@ -673,3 +684,17 @@ Screen('Flip',w);
 KbWait([],2);
 
 Screen('Close');
+
+
+
+function shark_attack(w,cosmic_shark)
+        [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+        Screen('Flip',w);
+        WaitSecs(wav_time) %We can change the wait time to whatever...
+        % Stop playback:
+        PsychPortAudio('Stop', pahandle);
+        
+        % Close the audio device:
+        PsychPortAudio('Close', pahandle);

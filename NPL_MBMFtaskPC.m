@@ -7,12 +7,12 @@ function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
 % sequential choice expt
 % ND, October 2006
 
-clearvars -except name gender dob age w contingency
+clearvars -except name gender dob age w contingency pre_toroal
 
 % specify the task parameters
 global leftpos rightpos boxypos moneyypos moneyxpos animxpos animypos moneytime ...
     isitime ititime choicetime moneypic losepic inmri keyleft keyright...
-    starttime tutorial_flag keyback;
+    starttime tutorial_flag keyback shark_attack_block;
 
 tutorial_flag = 0;
 keyback = KbName('z');
@@ -26,10 +26,10 @@ keyback = KbName('z');
 % slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
 
 %FOR DEBUG purposes only, w should be populated from tutorial!
-w=Screen('OpenWindow',0,[0 0 0]);
+%w=Screen('OpenWindow',0,[0 0 0]);
 
 totaltrials=200;    %total number of trials in the task
-transprob =.7;    % probability of 'correct' transition
+transprob =.85;    % probability of 'correct' transition
 
 [xres,yres] = Screen('windowsize',w);
 xcenter = xres/2;
@@ -166,6 +166,8 @@ elseif contingency ==2
 end
 
 
+attack_block = [warnings(1):warnings(1)+49;warnings(2):warnings(2)+49];
+
 %set random number generator
 rng('shuffle');
 %start_cogent
@@ -248,10 +250,21 @@ earth = imread('behav/earth.jpg');
 planetR = imread('behav/redplanet1.jpg');
 planetP = imread('behav/purpleplanet.jpg');
 cosmic_shark = imread('behav/cosmic_shark.png');
-shark_fin = imread('behav/fin_final.png');
+[shark_fin,~,alpha]  = imread('behav/fin_final.png');
+shark_fin(:,:,4) = alpha(:,:);
 shark_fin_rev = flipdim(shark_fin ,2); 
 galaxy_img = imread('behav/Spiral_galaxy.jpg');
 safe_scrn = imread('behav/Safe_screen.png');
+
+
+earth = Screen(w,'MakeTexture',earth);
+planetR = Screen(w,'MakeTexture',planetR);
+planetP = Screen(w,'MakeTexture',planetP);
+cosmic_shark = Screen(w,'MakeTexture', cosmic_shark);
+shark_fin = Screen(w,'MakeTexture', shark_fin);
+shark_fin_rev = Screen(w,'MakeTexture', shark_fin_rev);
+galaxy_img = Screen(w,'MakeTexture', galaxy_img);
+safe_scrn = Screen(w,'MakeTexture', safe_scrn);
 
 
 % initialise data vectors
@@ -306,19 +319,13 @@ for i = 1:3
         s(i,j).act1 = Screen(w,'MakeTexture',t(i,j).act1);
         s(i,j).act2 = Screen(w,'MakeTexture',t(i,j).act2);
         s(i,j).spoiled = Screen(w,'MakeTexture',t(i,j).spoiled);
+        s(i,j).shark = shark_fin;
     end
 end
 
 moneypic = Screen(w,'MakeTexture',moneypic);
 losepic = Screen(w,'MakeTexture',losepic);
-earth = Screen(w,'MakeTexture',earth);
-planetR = Screen(w,'MakeTexture',planetR);
-planetP = Screen(w,'MakeTexture',planetP);
-cosmic_shark = Screen(w,'MakeTexture', cosmic_shark);
-shark_fin = Screen(w,'MakeTexture', shark_fin);
-shark_fin_rev = Screen(w,'MakeTexture', shark_fin_rev);
-galaxy_img = Screen(w,'MakeTexture', galaxy_img);
-safe_scrn = Screen(w,'MakeTexture', safe_scrn);
+
 
 Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for transparency
 
@@ -337,6 +344,14 @@ KbWait([],2);
 
 % % % % main experimental loop % % % % <-modify here!!!
 for trial = 1:totaltrials
+    
+    %this will take care of when to remind subject it is a shark attack
+    %block
+    if any(find(trial==attack_block))
+        shark_attack_block=1;
+    else
+        shark_attack_block=0;
+    end
     
     Screen('Flip',w);
     
@@ -397,7 +412,7 @@ for trial = 1:totaltrials
     if ~choice1(trial) % spoiled
         %we pick up a half-trial of extra time here; not sure what to do about this
         slicewait = slicewait + choicetime + isitime + moneytime + ititime + jitter(trial);
-        
+         if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
         continue;
     end
     
@@ -431,6 +446,7 @@ for trial = 1:totaltrials
     if ~choice2(trial) % spoiled
         slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter(trial);
         fprintf(logfile,' ')
+        if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
         continue;
     end
     
@@ -447,18 +463,20 @@ for trial = 1:totaltrials
     fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time)
     
     %Shark attack!!!
-    if ismember(trial,attack)
-        [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
-        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-        Screen('Flip',w);
-        WaitSecs(wav_time) %We can change the wait time to whatever...
-        % Stop playback:
-        PsychPortAudio('Stop', pahandle);
-        
-        % Close the audio device:
-        PsychPortAudio('Close', pahandle);
-    end
+    if ismember(trial,attack); shark_attack(w,cosmic_shark); end
+%     if ismember(trial,attack)
+%         
+%         [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
+%         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+%         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+%         Screen('Flip',w);
+%         WaitSecs(wav_time) %We can change the wait time to whatever...
+%         % Stop playback:
+%         PsychPortAudio('Stop', pahandle);
+%         
+%         % Close the audio device:
+%         PsychPortAudio('Close', pahandle);
+%     end
     
 end
 
@@ -498,3 +516,17 @@ fclose('all');
 
 Screen('Close')
 Screen('CloseAll')
+
+
+
+function shark_attack(w,cosmic_shark)
+        [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+        Screen('Flip',w);
+        WaitSecs(wav_time) %We can change the wait time to whatever...
+        % Stop playback:
+        PsychPortAudio('Stop', pahandle);
+        
+        % Close the audio device:
+        PsychPortAudio('Close', pahandle);
