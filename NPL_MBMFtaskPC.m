@@ -2,12 +2,16 @@
 function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
-    rew_ons_sl, rew_ons_ms, payoff, question] = NPL_MBMFtaskPC(name, gender, dob, age, contingency, pre_total, w) 
+    rew_ons_sl, rew_ons_ms, payoff, question] = NPL_MBMFtaskPC(name, contingency, pre_total, w) 
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
 
+<<<<<<< HEAD
 clearvars -except name gender dob age w contingency pre_toroal
+=======
+clearvars -except name w contingency pre_total
+>>>>>>> origin/master
 
 % specify the task parameters
 global leftpos rightpos boxypos moneyypos moneyxpos animxpos animypos moneytime ...
@@ -19,6 +23,7 @@ keyback = KbName('z');
 
 %Screen Resoultion
 % screenResolution=[1920 1200]; %Jon's PC
+%screenResolution=[1920 1080]; %SPECC's PC
 
 % Open a new window.
 % [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
@@ -331,7 +336,7 @@ Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for
 
 % make logfile to be filled in in real time
 logfile = fopen([name '_' date '.txt'], 'w');
-fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tSC_ID\tgender\tDOB\tage\twon\n');
+fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tSC_ID\twon\n');
 %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
 
 
@@ -342,7 +347,7 @@ Screen('Flip',w);
 KbWait([],2);
 
 
-% % % % main experimental loop % % % % <-modify here!!!
+% % % % main experimental loop % % % % 
 for trial = 1:totaltrials
     
     %this will take care of when to remind subject it is a shark attack
@@ -355,15 +360,15 @@ for trial = 1:totaltrials
     
     Screen('Flip',w);
     
-    %Break trials
-    if find(trial == b) > 0
-        
-        DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue when you are ready.'],'center','center');
-        Screen('Flip',w);
-        KbWait([],2);
-        Screen('Flip',w);
-        WaitSecs((ititime)/1000)
-    end
+    %Break trials...NO BREAKS FOR YOU!?
+%     if find(trial == b) > 0
+%         
+%         DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue when you are ready.'],'center','center');
+%         Screen('Flip',w);
+%         KbWait([],2);
+%         Screen('Flip',w);
+%         WaitSecs((ititime)/1000)
+%     end
     
     % Warning screen for incoming shark attack!
     %if trial == totaltrials*(1/4)+1 || trial == totaltrials*(3/4)+1
@@ -436,9 +441,9 @@ for trial = 1:totaltrials
         halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice);
     
     % record second choice in log
-    fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%s\t%s\t%s\t%f',state(trial),choice2(trial),rts2(trial),...
+    fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%s',state(trial),choice2(trial),rts2(trial),...
         stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
-        name,gender,dob,age)
+        name)
     %  fprintf(logfile,'\t%d %d %f %f %f %f %f',state(trial),choice2(trial),rts2(trial),...
     %      stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial))
     
@@ -497,21 +502,21 @@ Screen('Flip',w);
 KbWait([],2);
 
 
-% Transition Question
-Screen('DrawTexture',w,planetR,[],[]); %draw background planet
-Screen('DrawTexture',w,s(1,1).norm,[],[leftpos boxypos leftpos+300 boxypos+300]);
-Screen('DrawTexture',w,s(1,2).norm,[],[rightpos boxypos rightpos+300 boxypos+300]);
-DrawFormattedText(w,['Which spaceship went mostly to the red planet?'],'center','center',[],wrap);
-Screen('Flip',w);
-% get a keystroke
-question = selectbox(inf);
-if question==2
-    logfile2 = fopen(['wrongtransition_' name '_' date '.txt'], 'w');
-    fprintf(logfile2,'%s\t0',name);
-else
-    logfile2 = fopen(['correcttransition_' name '_' date '.txt'], 'w');
-    fprintf(logfile2,'%s\t1',name);
-end
+% Transition Question--ASK Alwx but probably not needed...
+% Screen('DrawTexture',w,planetR,[],[]); %draw background planet
+% Screen('DrawTexture',w,s(1,1).norm,[],[leftpos boxypos leftpos+300 boxypos+300]);
+% Screen('DrawTexture',w,s(1,2).norm,[],[rightpos boxypos rightpos+300 boxypos+300]);
+% DrawFormattedText(w,['Which spaceship went mostly to the red planet?'],'center','center',[],wrap);
+% Screen('Flip',w);
+% % get a keystroke
+% question = selectbox(inf);
+% if question==2
+%     logfile2 = fopen(['wrongtransition_' name '_' date '.txt'], 'w');
+%     fprintf(logfile2,'%s\t0',name);
+% else
+%     logfile2 = fopen(['correcttransition_' name '_' date '.txt'], 'w');
+%     fprintf(logfile2,'%s\t1',name);
+% end
 fclose('all');
 
 Screen('Close')
