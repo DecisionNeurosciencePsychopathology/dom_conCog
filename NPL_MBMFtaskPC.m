@@ -7,7 +7,7 @@ function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
 % sequential choice expt
 % ND, October 2006
 
-clearvars -except name gender dob age w contingency pre_toroal
+clearvars -except name gender dob age w contingency pre_total
 
 
 % specify the task parameters
