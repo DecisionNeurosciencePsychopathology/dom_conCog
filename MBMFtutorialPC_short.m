@@ -27,6 +27,10 @@ shark_attack_block=0;
 %screenResolution=[1920 1200]; %Jon's PC
 screenResolution=[1920 1080]; %SPECC's PC
 
+%Try this out hoping it works!
+Pix_SS = get(0,'screensize');
+screenResolution=Pix_SS(3:end);
+
 % Open a new window.
 [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
 FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.

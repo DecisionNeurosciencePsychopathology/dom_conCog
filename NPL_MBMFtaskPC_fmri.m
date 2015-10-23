@@ -2,18 +2,20 @@
 function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
-    rew_ons_sl, rew_ons_ms, payoff] = NPL_MBMFtaskPC(name, contingency, pre_total, w) 
+    rew_ons_sl, rew_ons_ms, payoff] = NPL_MBMFtaskPC_fmri(name, contingency, pre_total, w)
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
 
 clearvars -except name gender dob age w contingency pre_total
 
+KbName('UnifyKeyNames');
 
 % specify the task parameters
 global leftpos rightpos boxypos moneyypos moneyxpos animxpos animypos moneytime ...
     isitime ititime choicetime moneypic losepic inmri keyleft keyright...
-    starttime tutorial_flag keyback shark_attack_block;
+    starttime tutorial_flag keyback shark_attack_block escKey caretKey equalsKey...
+    slack;
 
 tutorial_flag = 0;
 keyback = KbName('z');
@@ -28,10 +30,16 @@ keyback = KbName('z');
 % slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
 
 %FOR DEBUG purposes only, w should be populated from tutorial!
-%w=Screen('OpenWindow',0,[0 0 0]);
-
+if (nargin<4)
+    %Try this out hoping it works!
+    Pix_SS = get(0,'screensize');
+    screenResolution=Pix_SS(3:end);
+    [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
+    %w=Screen('OpenWindow',0,[0 0 0]);
+end
 totaltrials=200;    %total number of trials in the task
 transprob =.85;    % probability of 'correct' transition
+swap_prob = .4;     %Probability that the rockets switch position
 
 [xres,yres] = Screen('windowsize',w);
 xcenter = xres/2;
@@ -53,6 +61,8 @@ moneytime = 1500;
 isitime = 1000;
 ititime = 1000;
 choicetime = 3000;
+
+preStartWait = 8.0; %initial fixation
 
 numbreaks = 2;
 
@@ -83,7 +93,7 @@ black = BlackIndex(screenNumber);
 % Perform basic initialization of the sound driver:
 InitializePsychSound;
 
-%% 
+%%
 % set break times
 
 % b = 1:blocklength:totaltrials;
@@ -102,8 +112,16 @@ inmri = 0;  % set to 1 to time everything to slices
 %     keyleft = 80; %[5]
 %     keyright = 81;%[6]
 % else
-keyleft = KbName('1!');%[u]
-keyright = KbName('0)');%[i]
+
+% Set keys.
+%spaceKey  = KbName('SPACE');
+escKey  = KbName('ESCAPE');
+caretKey = KbName('6^'); %used for scanner trigger
+equalsKey = KbName('=+'); %used for scanner trigger
+
+%Right button glove is 1-5! (According to clock task)
+keyleft = KbName('7&');%[u]
+keyright = KbName('2@');%[i]
 % end
 
 numrewardedtrials = round(totaltrials/3);
@@ -151,11 +169,11 @@ s = rng(78);
 % shark_att1 = randi([(totaltrials*.25)+1 (totaltrials*.5)],2,1)';
 % shark_att2 = randi([(totaltrials*.75)+1 totaltrials],1)';
 % shark_attacks = [shark_att1 shark_att2];
-% 
+%
 % onle one shark attack during the task at pseudorandom spots determined by
 % the contingency, it will be towards the end of the first stress block.
- shark_att1 = randi([40 50],1,1)';
- shark_att2 = randi([90 101],1)';
+shark_att1 = randi([40 50],1,1)';
+shark_att2 = randi([90 101],1)';
 
 
 %%Grab correct contengency either shark attack early or later during task.
@@ -254,7 +272,7 @@ planetP = imread('behav/purpleplanet.jpg');
 cosmic_shark = imread('behav/cosmic_shark.png');
 [shark_fin,~,alpha]  = imread('behav/fin_final.png');
 shark_fin(:,:,4) = alpha(:,:);
-shark_fin_rev = flipdim(shark_fin ,2); 
+shark_fin_rev = flipdim(shark_fin ,2);
 galaxy_img = imread('behav/Spiral_galaxy.jpg');
 safe_scrn = imread('behav/Safe_screen.png');
 
@@ -337,14 +355,37 @@ fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl
 %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
 
 
-% Pre-Start screen
-DrawFormattedText(w,'Press any key to begin',...
-    'center',ytext);
-Screen('Flip',w);
-KbWait([],2);
+%% BEGIN TASK AFTER SYNC OBTAINED FROM SCANNER
+FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
+slack = FlipInterval/2;
 
 
-% % % % main experimental loop % % % % 
+[scannerStart, priorFlip] = scannerPulseSync;
+
+fprintf('pulse flip: %.5f\n', priorFlip);
+
+%initial fixation of 3 seconds to allow for steady state magnetization.
+%count down from 3 to 1, then a 1-second blank screen.
+%priorFlip = fixation(preStartWait - 4.0, 1, scannerStart);
+
+%fprintf('fix flip: %.5f\n', priorFlip);
+
+for cdown = 1:3
+    DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
+    priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
+    %fprintf('cdown: %d, fix flip: %.5f\n', cdown, priorFlip);
+    %WaitSecs(1.0);
+end
+
+
+% % Pre-Start screen
+% DrawFormattedText(w,'Press any key to begin',...
+%     'center',ytext);
+% Screen('Flip',w);
+% KbWait([],2);
+
+
+% % % % main experimental loop % % % %
 for trial = 1:totaltrials
     
     %this will take care of when to remind subject it is a shark attack
@@ -358,14 +399,14 @@ for trial = 1:totaltrials
     Screen('Flip',w);
     
     %Break trials...NO BREAKS FOR YOU!?
-%     if find(trial == b) > 0
-%         
-%         DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue when you are ready.'],'center','center');
-%         Screen('Flip',w);
-%         KbWait([],2);
-%         Screen('Flip',w);
-%         WaitSecs((ititime)/1000)
-%     end
+    %     if find(trial == b) > 0
+    %
+    %         DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue when you are ready.'],'center','center');
+    %         Screen('Flip',w);
+    %         KbWait([],2);
+    %         Screen('Flip',w);
+    %         WaitSecs((ititime)/1000)
+    %     end
     
     % Warning screen for incoming shark attack!
     %if trial == totaltrials*(1/4)+1 || trial == totaltrials*(3/4)+1
@@ -376,7 +417,7 @@ for trial = 1:totaltrials
         %Screen('Flip',w);
         warning_fin(w,xcenter,ycenter,shark_fin,shark_fin_rev,galaxy_img)
         WaitSecs((ititime*2)/1000) %We can change the wait time to whatever...
-    %elseif trial == totaltrials*(.5)+1
+        %elseif trial == totaltrials*(.5)+1
     elseif ismember(trial,warnings + totaltrials/4)
         DrawFormattedText(w, 'Shark Is Gone','center', 100);
         Screen('DrawTexture',w,safe_scrn, [],[])
@@ -388,11 +429,11 @@ for trial = 1:totaltrials
     
     %After shark attack
     if ismember(trial, attack+1)
-%         sum_so_far = sum(money);
-%         %Figure out the subtraction of the total here...
-%         total_loss = round((sum_so_far-prev_loss)*(1/3));
-%         prev_loss = total_loss;
-        DrawFormattedText(w,'You lose $25!','center','center',[255, 0, 0, 255],wrap); 
+        %         sum_so_far = sum(money);
+        %         %Figure out the subtraction of the total here...
+        %         total_loss = round((sum_so_far-prev_loss)*(1/3));
+        %         prev_loss = total_loss;
+        DrawFormattedText(w,'You lose $25!','center','center',[255, 0, 0, 255],wrap);
         Screen('Flip',w);
         WaitSecs((ititime*3)/1000) %We can change the wait time to whatever...
     end
@@ -400,9 +441,11 @@ for trial = 1:totaltrials
     
     % first level
     level = 0;
+    %Will it be a swap trial
+    swap = rand<swap_prob;
     planetpic = earth; %state 1 planet is earth
     [choice1(trial),rts1(trial),stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),~,~,~, lastChoice] = ...
-        halftrial(planetpic, s(1,:), pos1(trial),w,slicewait, level);
+        halftrial(planetpic, s(1,:), pos1(trial),w,slicewait, level,[],swap);
     
     
     % record first choice in log
@@ -414,7 +457,7 @@ for trial = 1:totaltrials
     if ~choice1(trial) % spoiled
         %we pick up a half-trial of extra time here; not sure what to do about this
         slicewait = slicewait + choicetime + isitime + moneytime + ititime + jitter(trial);
-         if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
+        if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
         continue;
     end
     
@@ -435,7 +478,7 @@ for trial = 1:totaltrials
     % second level
     level=1;
     [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),chpos,stimleft,stimright] = ...
-        halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice);
+        halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice); %Swap is hard coded to 0
     
     % record second choice in log
     fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
@@ -466,19 +509,19 @@ for trial = 1:totaltrials
     
     %Shark attack!!!
     if ismember(trial,attack); shark_attack(w,cosmic_shark); end
-%     if ismember(trial,attack)
-%         
-%         [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
-%         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-%         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-%         Screen('Flip',w);
-%         WaitSecs(wav_time) %We can change the wait time to whatever...
-%         % Stop playback:
-%         PsychPortAudio('Stop', pahandle);
-%         
-%         % Close the audio device:
-%         PsychPortAudio('Close', pahandle);
-%     end
+    %     if ismember(trial,attack)
+    %
+    %         [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
+    %         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+    %         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+    %         Screen('Flip',w);
+    %         WaitSecs(wav_time) %We can change the wait time to whatever...
+    %         % Stop playback:
+    %         PsychPortAudio('Stop', pahandle);
+    %
+    %         % Close the audio device:
+    %         PsychPortAudio('Close', pahandle);
+    %     end
     
 end
 
@@ -494,7 +537,7 @@ totalwon = sum(money)*.25 + pre_total - 25;
 
 % Ask the transition Question
 %DrawFormattedText(w,['Nice!  You found ',num2str(totalwon),' pieces of space treasure. \n\n' 'That''s worth $10! \n\n'],'center','center',[],wrap); %' ,num2str(ceil(totalwon*.05)), '
-DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won ',num2str(totalwon),'!'],'center','center',[],wrap); 
+DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won \n $ ',num2str(totalwon),'!'],'center','center',[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
@@ -520,8 +563,29 @@ Screen('Close')
 Screen('CloseAll')
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                           support functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function shark_attack(w,cosmic_shark)
+    function [seconds, VBLT] = scannerPulseSync
+        while(1)
+            [ keyIsDown, seconds, keyCode ] = KbCheck;
+            
+            if(keyIsDown && keyCode(escKey))
+                msgAndCloseEverything(['Quit on trial ' num2str(i)]);
+                error('quit early (on %d)\n',i)
+            end
+            
+            if(keyIsDown && (keyCode(caretKey) || keyCode(equalsKey))), break; end
+            WaitSecs(.0005);
+        end
+        % change the screen to prevent key code carrying forward
+        % and obtain time stamp of pulse for use with timings
+        [VBLT, SOnsetTime] = Screen('Flip', w);
+    end
+
+
+    function shark_attack(w,cosmic_shark)
         [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
@@ -532,3 +596,5 @@ function shark_attack(w,cosmic_shark)
         
         % Close the audio device:
         PsychPortAudio('Close', pahandle);
+    end
+end

@@ -1,13 +1,22 @@
-function [choice, rt, ons_sl, ons_ms, ch_sl, ch_ms, pos, stimleft,stimright, dimChoice,kickout] = halftrial(planetpic,pix, ~,window,~,level,oldstim)
+function [choice, rt, ons_sl, ons_ms, ch_sl, ch_ms, pos, stimleft,stimright, dimChoice,kickout] = halftrial(planetpic,pix, ~,window,~,level,oldstim,swap)
 
 global leftpos rightpos boxypos choicetime isitime moneytime ititime shark_attack_block;
 
 % run half a trial, ie one state
 % set up pictures, swapping sides accoridng to swap
 
-stimleft = pix(1);
-stimright = pix(2);
+if (nargin < 8)
+    swap=0;
+end
 
+
+if swap
+    stimleft = pix(2);
+    stimright = pix(1);
+else
+    stimleft = pix(1);
+    stimright = pix(2);
+end
 % prepare pictures - new hotness
 Screen('DrawTexture',window,planetpic,[],[]); %draw background planet
 if (level==1)
@@ -56,7 +65,8 @@ if ~pos
   dimChoice=0;
 else
   rt = t1 - t0;
-  choice = pos;%xor((pos-1), swap)+1; % record choice accounting for side swap
+  %choice = pos;%xor((pos-1), swap)+1; % record choice accounting for side swap
+  choice = xor((pos-1), swap)+1; % record choice accounting for side swap
   [ch_sl, ch_ms] = slicewrapper; % get slice onset times for choice
 
   % animate the box
