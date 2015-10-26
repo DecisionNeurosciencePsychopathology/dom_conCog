@@ -26,7 +26,7 @@ Screen('DrawTexture',window,stimleft.norm,[],[leftpos boxypos leftpos+300 boxypo
 Screen('DrawTexture',window,stimright.norm,[],[rightpos boxypos rightpos+300 boxypos+300]);
 
 if shark_attack_block
-    Screen('DrawTexture',window,stimleft.shark,[],[660 450 960 620]);
+    Screen('DrawTexture',window,stimleft.shark,[],[leftpos+400-150 boxypos+50 leftpos+400+150 boxypos+50+170]);
 end
 
 %GetRidofTHisMaybe

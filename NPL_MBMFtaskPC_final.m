@@ -2,7 +2,7 @@
 function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
-    rew_ons_sl, rew_ons_ms, payoff] = NPL_MBMFtaskPC_fmri(name, contingency, pre_total, w)
+    rew_ons_sl, rew_ons_ms, payoff, attack, warnings] = NPL_MBMFtaskPC_final(name, contingency, pre_total, w)
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
@@ -29,13 +29,11 @@ keyback = KbName('z');
 % FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
 % slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
 
-%FOR DEBUG purposes only, w should be populated from tutorial!
-if (nargin<4)
-    %Try this out hoping it works!
+%If window doesn't exist already create it
+if (~exist('w', 'var'))
     Pix_SS = get(0,'screensize');
     screenResolution=Pix_SS(3:end);
     [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
-    %w=Screen('OpenWindow',0,[0 0 0]);
 end
 totaltrials=200;    %total number of trials in the task
 transprob =.85;    % probability of 'correct' transition
@@ -53,6 +51,10 @@ boxypos = ycenter+50;
 
 moneyypos = ycenter-round(75/2)-200;
 moneyxpos = xcenter-round(75/2);
+
+leftposvect = [leftpos boxypos leftpos+300 boxypos+300];
+rightposvect = [rightpos boxypos rightpos+300 boxypos+300];
+posvect = [leftposvect; rightposvect];
 
 animxpos = 0:50:250;
 animypos = 0:50:250;
@@ -105,7 +107,7 @@ if totaltrials - b(length(b)) < round(totaltrials/(numbreaks+1))*0.5
     b(length(b)) = [];
 end
 
-inmri = 0;  % set to 1 to time everything to slices
+inmri = 0;  % set to 1 if subject is in the scanner
 
 % if inmri
 %     % right handed button box
@@ -119,11 +121,16 @@ escKey  = KbName('ESCAPE');
 caretKey = KbName('6^'); %used for scanner trigger
 equalsKey = KbName('=+'); %used for scanner trigger
 
-%Right button glove is 1-5! (According to clock task)
-keyleft = KbName('7&');%[u]
-keyright = KbName('2@');%[i]
-% end
-
+if inmri
+    %Right button glove is 1-5! (According to clock task)
+    keyleft = KbName('7&');%[u]
+    keyright = KbName('2@');%[i]
+    % end
+else
+    keyleft = KbName('1!');%[u]
+    keyright = KbName('0)');%[i]
+end
+    
 numrewardedtrials = round(totaltrials/3);
 
 % enter subject details Shouldn't be necessary now
@@ -272,7 +279,7 @@ planetP = imread('behav/purpleplanet.jpg');
 cosmic_shark = imread('behav/cosmic_shark.png');
 [shark_fin,~,alpha]  = imread('behav/fin_final.png');
 shark_fin(:,:,4) = alpha(:,:);
-shark_fin_rev = flipdim(shark_fin ,2);
+shark_fin_rev = flip(shark_fin ,2);
 galaxy_img = imread('behav/Spiral_galaxy.jpg');
 safe_scrn = imread('behav/Safe_screen.png');
 
@@ -311,13 +318,15 @@ rew_ons_ms = zeros(1,totaltrials);      % onset of outcome, ms
 
 % initial wait
 
-if (inmri)
-    nslices=36;                  %number of slices
-    slicewait=5*nslices+1;       %sets initial slicewait to accomodate 5 dummy volumes
-else
+%Not sure about this line of code here, I think syncScannerPulse already
+%accounts for the dummy slices?
+% if (inmri)
+%     nslices=36;                  %number of slices
+%     slicewait=5*nslices+1;       %sets initial slicewait to accomodate 5 dummy volumes
+% else
     slicewait = ceil(0 / 90); %set initial slicewait to now - but time is
     %since cogent was called, which was a few lines ago...?
-end
+% end
 
 jitter_time = 1.5; %default 1.5 seconds, we can change this to be an array
 %which is indexed via totaltrials, the eact time of the jitters will depend
@@ -354,29 +363,100 @@ logfile = fopen([name '_' date '.txt'], 'w');
 fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tSC_ID\twon\tcontingency\n');
 %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
 
-
-%% BEGIN TASK AFTER SYNC OBTAINED FROM SCANNER
-FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
-slack = FlipInterval/2;
-
-
-[scannerStart, priorFlip] = scannerPulseSync;
-
-fprintf('pulse flip: %.5f\n', priorFlip);
-
-%initial fixation of 3 seconds to allow for steady state magnetization.
-%count down from 3 to 1, then a 1-second blank screen.
-%priorFlip = fixation(preStartWait - 4.0, 1, scannerStart);
-
-%fprintf('fix flip: %.5f\n', priorFlip);
-
-for cdown = 1:3
-    DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
-    priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
-    %fprintf('cdown: %d, fix flip: %.5f\n', cdown, priorFlip);
-    %WaitSecs(1.0);
+%Add in optional instructions here...just for fmri version!?
+if inmri
+    DrawFormattedText(w,'Let''s Recap.','center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    Screen('DrawTexture',w,earth,[],[]); %draw background planet
+    Screen('DrawTexture',w,s(1,1).norm,[],leftposvect);
+    Screen('DrawTexture',w,s(1,2).norm,[],rightposvect);
+    DrawFormattedText(w,['Use your left index finger. \n\n\n' 'to choose options on the left.'],'center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    
+    Screen('DrawTexture',w,earth,[],[]); %draw background planet
+    Screen('DrawTexture',w,s(1,1).norm,[],leftposvect);
+    Screen('DrawTexture',w,s(1,2).norm,[],rightposvect);
+    DrawFormattedText(w,['Use your right index finger. \n\n\n' 'to choose options on the right.'],'center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    Screen('DrawTexture',w,earth,[],[]); %draw background planet
+    Screen('DrawTexture',w,s(1,1).norm,[],leftposvect);
+    Screen('DrawTexture',w,s(1,2).norm,[],rightposvect);
+    DrawFormattedText(w,['First you will choose a rocket.'],'center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    Screen('DrawTexture',w,planetR,[],[]); %draw background planet
+    Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
+    Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
+    DrawFormattedText(w,['Then you will choose and alien.'],'center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    DrawFormattedText(w,['After you choose an alien, \n\n' 'you may get treasure.' ],'center',ytext,[],wrap);
+    Screen('DrawTexture',w,moneypic,[],[]); %draw background planet
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    %Explain No Treasure
+    DrawFormattedText(w,'Or no treasure.','center',ytext,[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    DrawFormattedText(w,'Or no treasure.','center',ytext,[],wrap);
+    Screen('DrawTexture',w,losepic,[],[]); %draw background planet
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    DrawFormattedText(w,'Rockets will also begin to switch sides. \n\n Be sure to pay close attention.','center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+    DrawFormattedText(w,'The position of the rocket does not matter, \n\n only the rocket itself matters','center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+        DrawFormattedText(w,'Lets''s get started','center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    
+        DrawFormattedText(w,'Waiting for scanner pulse...','center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
 end
 
+
+
+
+
+%% BEGIN TASK AFTER SYNC OBTAINED FROM SCANNER
+if inmri
+    FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
+    slack = FlipInterval/2;
+    
+    
+    [scannerStart, priorFlip] = scannerPulseSync;
+    
+    fprintf('pulse flip: %.5f\n', priorFlip);
+    
+    %initial fixation of 3 seconds to allow for steady state magnetization.
+    %count down from 3 to 1, then a 1-second blank screen.
+    %priorFlip = fixation(preStartWait - 4.0, 1, scannerStart);
+    
+    %fprintf('fix flip: %.5f\n', priorFlip);
+    
+    for cdown = 1:3
+        DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
+        priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
+        %fprintf('cdown: %d, fix flip: %.5f\n', cdown, priorFlip);
+        %WaitSecs(1.0);
+    end
+    
+end
 
 % % Pre-Start screen
 % DrawFormattedText(w,'Press any key to begin',...
@@ -478,7 +558,7 @@ for trial = 1:totaltrials
     % second level
     level=1;
     [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),chpos,stimleft,stimright] = ...
-        halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice); %Swap is hard coded to 0
+        halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice); 
     
     % record second choice in log
     fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
