@@ -2,7 +2,8 @@
 function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
-    rew_ons_sl, rew_ons_ms, payoff, attack, warnings] = NPL_MBMFtaskPC_final(name, contingency, pre_total, w)
+    rew_ons_sl, rew_ons_ms, payoff, attack, warnings, swap_hist,...
+    keycode1, keycode2] = NPL_MBMFtaskPC_final(name, contingency, pre_total, w)
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
@@ -36,7 +37,7 @@ if (~exist('w', 'var'))
     [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
 end
 totaltrials=200;    %total number of trials in the task
-transprob =.85;    % probability of 'correct' transition
+transprob =.8;    % probability of 'correct' transition
 swap_prob = .4;     %Probability that the rockets switch position
 
 [xres,yres] = Screen('windowsize',w);
@@ -107,7 +108,7 @@ if totaltrials - b(length(b)) < round(totaltrials/(numbreaks+1))*0.5
     b(length(b)) = [];
 end
 
-inmri = 0;  % set to 1 if subject is in the scanner
+%inmri = 0;  % set to 1 if subject is in the scanner
 
 % if inmri
 %     % right handed button box
@@ -172,13 +173,18 @@ jitter = zeros(1,totaltrials);
 %just remove the s = rng line and move the shark attack lines of code under
 %the rng('shuffle') command
 %for attack block 1 and 2
-s = rng(78);
+%s = rng(78);
 % shark_att1 = randi([(totaltrials*.25)+1 (totaltrials*.5)],2,1)';
 % shark_att2 = randi([(totaltrials*.75)+1 totaltrials],1)';
 % shark_attacks = [shark_att1 shark_att2];
 %
 % onle one shark attack during the task at pseudorandom spots determined by
 % the contingency, it will be towards the end of the first stress block.
+%set random number generator
+rng(78); %Set all random actions to pseudorandom seed 78 10/29/15 TEST to be sure of this!!!  
+
+
+
 shark_att1 = randi([40 50],1,1)';
 shark_att2 = randi([90 101],1)';
 
@@ -194,12 +200,6 @@ end
 
 
 attack_block = [warnings(1):warnings(1)+49;warnings(2):warnings(2)+49];
-
-%set random number generator
-rng('shuffle');
-%start_cogent
-
-starttime = GetSecs*1000;
 
 % Load the figures
 [t(1,1).norm, ~, alpha]=imread('behav/rocket1_norm.png');
@@ -304,6 +304,9 @@ pos2 = rand(1,totaltrials) > .5;        % positioning of second level boxes
 rts1 = zeros(1,totaltrials);            % first level RT
 rts2 = zeros(1,totaltrials);            % second level RT
 money = zeros(1,totaltrials);           % win
+swap_hist = zeros(1,totaltrials);       % did the rockts change positions
+keycode1 = zeros(1,totaltrials);        % Which button was pressed first stage
+keycode2 = zeros(1,totaltrials);        % Which button was pressed second stage    
 
 stim1_ons_sl = zeros(1,totaltrials);    % onset of first-level stim, slices
 stim1_ons_ms = zeros(1,totaltrials);    % onset of first-level stim, ms
@@ -360,7 +363,7 @@ Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for
 
 % make logfile to be filled in in real time
 logfile = fopen([name '_' date '.txt'], 'w');
-fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tSC_ID\twon\tcontingency\n');
+fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tswap_hist\tkeycode1\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tkeycode2\tSC_ID\tcontingency\twon\n');
 %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
 
 %Add in optional instructions here...just for fmri version!?
@@ -441,6 +444,9 @@ if inmri
     
     [scannerStart, priorFlip] = scannerPulseSync;
     
+    % Grab the time right after the scanner syncs
+    starttime = GetSecs*1000;
+    
     fprintf('pulse flip: %.5f\n', priorFlip);
     
     %initial fixation of 3 seconds to allow for steady state magnetization.
@@ -456,6 +462,10 @@ if inmri
         %WaitSecs(1.0);
     end
     
+else
+    
+    %set reference time right at the start of the trials
+    starttime = GetSecs*1000;
 end
 
 % % Pre-Start screen
@@ -524,13 +534,15 @@ for trial = 1:totaltrials
     %Will it be a swap trial
     swap = rand<swap_prob;
     planetpic = earth; %state 1 planet is earth
-    [choice1(trial),rts1(trial),stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),~,~,~, lastChoice] = ...
+    [choice1(trial),rts1(trial),stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),keycode1(trial),~,~, lastChoice] = ...
         halftrial(planetpic, s(1,:), pos1(trial),w,slicewait, level,[],swap);
     
+    %Need swap history to determine right left choices
+    swap_hist(trial) = swap;
     
     % record first choice in log
-    fprintf(logfile,'\n%d\t%d\t%f\t%f\t%f\t%f\t%f',trial,choice1(trial),rts1(trial),...
-        stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial))
+    fprintf(logfile,'\n%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%d',trial,choice1(trial),rts1(trial),...
+        stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),swap_hist(trial),keycode1(trial))
     %fprintf(logfile,'\n%d %d %f %f %f %f %f',trial,choice1(trial),rts1(trial),...
     %   stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial))
     
@@ -557,13 +569,13 @@ for trial = 1:totaltrials
     
     % second level
     level=1;
-    [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),chpos,stimleft,stimright] = ...
+    [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),keycode2(trial),stimleft,stimright] = ...
         halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice); 
     
     % record second choice in log
-    fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
+    fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
         stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
-        name,contingency)
+        keycode2(trial),name,contingency)
     %  fprintf(logfile,'\t%d %d %f %f %f %f %f',state(trial),choice2(trial),rts2(trial),...
     %      stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial))
     
@@ -577,15 +589,16 @@ for trial = 1:totaltrials
     
     % outcome
     money(trial) = rand < payoff(state(trial)-1,choice2(trial),trial);
-    
-    [rew_ons_sl(trial),rew_ons_ms(trial)] = drawoutcome(money(trial),w,chpos,stimleft,stimright);
-    
+    right_before_outcome(trial)=(GetSecs*1000 - starttime);
+    [rew_ons_sl(trial),rew_ons_ms(trial)] = drawoutcome(money(trial),w,keycode2(trial),stimleft,stimright);
+    %right_after_outcome(trial)=(GetSecs*1000 - starttime);
     slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter(trial);
     
     fprintf(logfile,'\t%d',money(trial))
     
     %Jitter 2--ITI
     fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time)
+    right_after_sec_jitter(trial)=(GetSecs*1000 - starttime);
     
     %Shark attack!!!
     if ismember(trial,attack); shark_attack(w,cosmic_shark); end

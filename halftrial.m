@@ -42,7 +42,7 @@ end
 
 %t0 = drawpict(1);
 
-t0 = Screen('Flip',window);
+t0 = Screen('Flip',window); %This is the time the subject sees the rockets or aliens
 
 % get a keystroke
 

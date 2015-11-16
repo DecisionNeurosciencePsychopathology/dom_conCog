@@ -41,9 +41,10 @@ Priority(MaxPriority(w));
 
 %w=Screen('OpenWindow',0,[0 0 0]);
 
-totaltrials=20;    %total number of trials in the task
+totaltrials=40;    %total number of trials in the task
 shark_trials = 12; %total number of shark trials
-transprob = .8;    % probability of 'correct' transition
+%11/16/15 tutorial is 70/30
+transprob = .7;    % probability of 'correct' transition 
 
 [xres,yres] = Screen('windowsize',w);
 xcenter = xres/2;
@@ -86,73 +87,72 @@ ytext = round(1*yres/5);
 load tut/masterprob
 
 % Load the figures
-
-% Load the figures
-[t(1,1).norm, ~, alpha]=imread('tut/tutrocket1_n.png');
+[t(1,1).norm, ~, alpha]=imread('behav/rocket1_norm.png');
 t(1,1).norm(:,:,4) = alpha(:,:);
-[t(1,1).deact, ~, alpha]=imread('tut/tutrocket1_d.png');
+[t(1,1).deact, ~, alpha]=imread('behav/rocket1_deact.png');
 t(1,1).deact(:,:,4) = alpha(:,:);
-[t(1,1).act1, ~, alpha]=imread('tut/tutrocket1_a1.png');
+[t(1,1).act1, ~, alpha]=imread('behav/rocket1_a1.png');
 t(1,1).act1(:,:,4) = alpha(:,:);
-[t(1,1).act2, ~, alpha]=imread('tut/tutrocket1_a2.png');
+[t(1,1).act2, ~, alpha]=imread('behav/rocket1_a2.png');
 t(1,1).act2(:,:,4) = alpha(:,:);
-[t(1,1).spoiled, ~, alpha]=imread('tut/tutrocket1_s.png');
+[t(1,1).spoiled, ~, alpha]=imread('behav/rocket1_sp.png');
 t(1,1).spoiled(:,:,4) = alpha(:,:);
 
-[t(1,2).norm, ~, alpha]=imread('tut/tutrocket2_n.png');
+[t(1,2).norm, ~, alpha]=imread('behav/rocket2_norm.png');
 t(1,2).norm(:,:,4) = alpha(:,:);
-[t(1,2).deact, ~, alpha]=imread('tut/tutrocket2_d.png');
+[t(1,2).deact, ~, alpha]=imread('behav/rocket2_deact.png');
 t(1,2).deact(:,:,4) = alpha(:,:);
-[t(1,2).act1, ~, alpha]=imread('tut/tutrocket2_a1.png');
+[t(1,2).act1, ~, alpha]=imread('behav/rocket2_a1.png');
 t(1,2).act1(:,:,4) = alpha(:,:);
-[t(1,2).act2, ~, alpha]=imread('tut/tutrocket2_a2.png');
+[t(1,2).act2, ~, alpha]=imread('behav/rocket2_a2.png');
 t(1,2).act2(:,:,4) = alpha(:,:);
-[t(1,2).spoiled, ~, alpha]=imread('tut/tutrocket2_s.png');
+[t(1,2).spoiled, ~, alpha]=imread('behav/rocket2_sp.png');
 t(1,2).spoiled(:,:,4) = alpha(:,:);
 
-[t(2,1).norm, ~, alpha]=imread('tut/tutalien1_n.png');
+[t(2,1).norm, ~, alpha]=imread('behav/alien3_norm.png');
 t(2,1).norm(:,:,4) = alpha(:,:);
-[t(2,1).deact, ~, alpha]=imread('tut/tutalien1_d.png');
+[t(2,1).deact, ~, alpha]=imread('behav/alien3_deact.png');
 t(2,1).deact(:,:,4) = alpha(:,:);
-[t(2,1).act1, ~, alpha]=imread('tut/tutalien1_a1.png');
+[t(2,1).act1, ~, alpha]=imread('behav/alien3_a1.png');
 t(2,1).act1(:,:,4) = alpha(:,:);
-[t(2,1).act2, ~, alpha]=imread('tut/tutalien1_a2.png');
+[t(2,1).act2, ~, alpha]=imread('behav/alien3_a2.png');
 t(2,1).act2(:,:,4) = alpha(:,:);
-[t(2,1).spoiled, ~, alpha]=imread('tut/tutalien1_s.png');
+[t(2,1).spoiled, ~, alpha]=imread('behav/alien3_sp.png');
 t(2,1).spoiled(:,:,4) = alpha(:,:);
 
-[t(2,2).norm, ~, alpha]=imread('tut/tutalien2_n.png');
+[t(2,2).norm, ~, alpha]=imread('behav/alien4_norm.png');
 t(2,2).norm(:,:,4) = alpha(:,:);
-[t(2,2).deact, ~, alpha]=imread('tut/tutalien2_d.png');
+[t(2,2).deact, ~, alpha]=imread('behav/alien4_deact.png');
 t(2,2).deact(:,:,4) = alpha(:,:);
-[t(2,2).act1, ~, alpha]=imread('tut/tutalien2_a1.png');
+[t(2,2).act1, ~, alpha]=imread('behav/alien4_a1.png');
 t(2,2).act1(:,:,4) = alpha(:,:);
-[t(2,2).act2, ~, alpha]=imread('tut/tutalien2_a2.png');
+[t(2,2).act2, ~, alpha]=imread('behav/alien4_a2.png');
 t(2,2).act2(:,:,4) = alpha(:,:);
-[t(2,2).spoiled, ~, alpha]=imread('tut/tutalien2_s.png');
+[t(2,2).spoiled, ~, alpha]=imread('behav/alien4_sp.png');
 t(2,2).spoiled(:,:,4) = alpha(:,:);
 
-[t(3,1).norm, ~, alpha]=imread('tut/tutalien3_n.png');
+[t(3,1).norm, ~, alpha]=imread('behav/alien1_norm.png');
 t(3,1).norm(:,:,4) = alpha(:,:);
-[t(3,1).deact, ~, alpha]=imread('tut/tutalien3_d.png');
+[t(3,1).deact, ~, alpha]=imread('behav/alien1_deact.png');
 t(3,1).deact(:,:,4) = alpha(:,:);
-[t(3,1).act1, ~, alpha]=imread('tut/tutalien3_a1.png');
+[t(3,1).act1, ~, alpha]=imread('behav/alien1_a1.png');
 t(3,1).act1(:,:,4) = alpha(:,:);
-[t(3,1).act2, ~, alpha]=imread('tut/tutalien3_a2.png');
+[t(3,1).act2, ~, alpha]=imread('behav/alien1_a2.png');
 t(3,1).act2(:,:,4) = alpha(:,:);
-[t(3,1).spoiled, ~, alpha]=imread('tut/tutalien3_s.png');
+[t(3,1).spoiled, ~, alpha]=imread('behav/alien1_sp.png');
 t(3,1).spoiled(:,:,4) = alpha(:,:);
 
-[t(3,2).norm, ~, alpha]=imread('tut/tutalien4_n.png');
+[t(3,2).norm, ~, alpha]=imread('behav/alien2_norm.png');
 t(3,2).norm(:,:,4) = alpha(:,:);
-[t(3,2).deact, ~, alpha]=imread('tut/tutalien4_d.png');
+[t(3,2).deact, ~, alpha]=imread('behav/alien2_deact.png');
 t(3,2).deact(:,:,4) = alpha(:,:);
-[t(3,2).act1, ~, alpha]=imread('tut/tutalien4_a1.png');
+[t(3,2).act1, ~, alpha]=imread('behav/alien2_a1.png');
 t(3,2).act1(:,:,4) = alpha(:,:);
-[t(3,2).act2, ~, alpha]=imread('tut/tutalien4_a2.png');
+[t(3,2).act2, ~, alpha]=imread('behav/alien2_a2.png');
 t(3,2).act2(:,:,4) = alpha(:,:);
-[t(3,2).spoiled,~, alpha]=imread('tut/tutalien4_s.png');
+[t(3,2).spoiled, ~, alpha]=imread('behav/alien2_sp.png');
 t(3,2).spoiled(:,:,4) = alpha(:,:);
+
 
 [moneypic,~, alpha] = imread('behav/t.png');
 moneypic(:,:,4) = alpha(:,:);
@@ -160,8 +160,8 @@ moneypic(:,:,4) = alpha(:,:);
 losepic(:,:,4) = alpha(:,:);
 
 earth = imread('behav/earth.jpg');
-planetR = imread('tut/tutgreenplanet.jpg');
-planetP = imread('tut/tutyellowplanet.jpg');
+planetR = imread('behav/redplanet1.jpg');
+planetP = imread('behav/purpleplanet.jpg');
 
 %shark textures
 %Images
@@ -234,7 +234,7 @@ DrawFormattedText(w,['You will be riding a spaceship \n\n' 'to look for space tr
 Screen('Flip',w);
 KbWait([],2);
 
-planetpic = planetR;
+planetpic = planetP;
 
 % screen 3
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
@@ -318,7 +318,7 @@ alien_trials = 30;
 kickout = 0;
 % screen 15
 while kickout==0
-    planetpic = planetR;
+    planetpic = planetP;
     Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
     Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
     Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
@@ -392,7 +392,7 @@ planetpic = planetR;
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
 Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
 Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
-DrawFormattedText(w,'Green planet',...
+DrawFormattedText(w,'Red planet',...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
@@ -402,7 +402,7 @@ planetpic = planetP;
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
 Screen('DrawTexture',w,s(3,1).norm,[],leftposvect);
 Screen('DrawTexture',w,s(3,2).norm,[],rightposvect);
-DrawFormattedText(w,'Or yellow planet',...
+DrawFormattedText(w,'Or purple planet',...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
@@ -412,7 +412,7 @@ planetpic = earth;
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
 Screen('DrawTexture',w,s(1,1).norm,[],leftposvect);
 Screen('DrawTexture',w,s(1,2).norm,[],rightposvect);
-DrawFormattedText(w,['You will chose a spaceship. \n\n\n' 'One spaceship will fly mostly\n\n' 'to the green planet, \n\n' 'and the other mostly to the yellow planet.'],...
+DrawFormattedText(w,['You will chose a spaceship. \n\n\n' 'One spaceship will fly mostly\n\n' 'to the red planet, \n\n' 'and the other mostly to the purple planet.'],...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
@@ -477,9 +477,9 @@ while kickout==0
         state(trial) = 2 + xor((rand > transprob),(choice1(trial)-1));
         switch (state(trial)) %set planet pic depending on state
             case 2
-                planetpic = planetR;
-            case 3
                 planetpic = planetP;
+            case 3
+                planetpic = planetR;
         end
         % second level
         level = 1;
@@ -617,9 +617,9 @@ for trial = 1:shark_trials %Number of shark trials
     state(trial) = 2 + xor((rand > transprob),(choice1(trial)-1));
     switch (state(trial)) %set planet pic depending on state
         case 2
-            planetpic = planetR;
-        case 3
             planetpic = planetP;
+        case 3
+            planetpic = planetR;
     end
     % second level
     level = 1;

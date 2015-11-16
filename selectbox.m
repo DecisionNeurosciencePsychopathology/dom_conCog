@@ -1,4 +1,4 @@
-function [pos,buttontime, kickout] = selectbox(unt)
+function [pos,buttontime, kickout, keycode] = selectbox(unt)
 
 global keyleft keyright keyback tutorial_flag
 

@@ -9,3 +9,5 @@ function fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jit
   
   %Jitter time length
   WaitSecs(jitter_time);
+  
+ 

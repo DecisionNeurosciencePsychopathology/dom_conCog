@@ -7,10 +7,10 @@ function [ret, stay_data, stay_shark_data, block_data]=run_shark_analysis(file_n
     %file_name = [file_name '.txt'];
     data = read_in_file(file_name);
     
-    if ~isempty(strfind(file_name,'LBK')) || ~isempty(strfind(file_name,'CAB')) || ~isempty(strfind(file_name,'JMF')) || ~isempty(strfind(file_name,'RSA')) || ~isempty(strfind(file_name,'HAS'))
+    if ~isempty(strfind(file_name,'LBK')) || ~isempty(strfind(file_name,'CAB')) || ~isempty(strfind(file_name,'JMF')) || ~isempty(strfind(file_name,'RSA')) || ~isempty(strfind(file_name,'HAS')) || ~isempty(strfind(file_name,'TCAO'))
         data.contingency = ones(1,length(data.choice1))';
     else
-        data.contingency = repmat(2,1,length(data.choice1))';
+        data.contingency = repmat(2,1,length(data.choice1))'; 
     end
     %Create trial indexes of win/loss, common/rare, and stay/switch trials
     win_trials = find(data.won==1);
@@ -254,6 +254,6 @@ loss_rare_stay_no_shark_pct = length(loss_rare_stay_no_shark_trials)/(length(los
     %stay_data = reshape(stay_data,1,numel(stay_data))';
     %stay_shark_data = reshape(stay_shark_data,1,numel(stay_data)*size(stay_shark_data,2))';
 function data = read_in_file(file)
-    format_spec = '%d%d%f%f%f%f%f%d%d%f%f%f%f%f%s%d';
+    format_spec = '%d%d%f%f%f%f%f%d%d%f%f%f%f%f%s%d%d';
     data = readtable(file,'Delimiter','\t', 'Format',format_spec);
     
