@@ -390,8 +390,8 @@ KbWait([],2);
 % screen 15
 planetpic = planetR;
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
-Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
-Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
+Screen('DrawTexture',w,s(3,1).norm,[],leftposvect);
+Screen('DrawTexture',w,s(3,2).norm,[],rightposvect);
 DrawFormattedText(w,'Red planet',...
     'center',ytext,[],wrap);
 Screen('Flip',w);
@@ -400,8 +400,8 @@ KbWait([],2);
 % screen 1
 planetpic = planetP;
 Screen('DrawTexture',w,planetpic,[],[]); %draw background planet
-Screen('DrawTexture',w,s(3,1).norm,[],leftposvect);
-Screen('DrawTexture',w,s(3,2).norm,[],rightposvect);
+Screen('DrawTexture',w,s(2,1).norm,[],leftposvect);
+Screen('DrawTexture',w,s(2,2).norm,[],rightposvect);
 DrawFormattedText(w,'Or purple planet',...
     'center',ytext,[],wrap);
 Screen('Flip',w);
@@ -532,7 +532,9 @@ KbWait([],2);
 
 %DrawFormattedText(w,['Hint #3:' '\n\n\n' 'The spaceship you choose is important because often \n\n' 'an alien on one planet may be better \n\n' 'than the ones on another planet.\n\n\n'  'Find the spaceship that is\n\n' 'most likely to take you to the right planet.'],...
 %    'center',ytext,[],wrap);
-DrawFormattedText(w,['Hint #3:' '\n\n\n' 'Try to take the spaceship to \n\n' 'the planet with the alien that \n\n' 'is currently the best.\n\n\n'  'Remember there is always one\n\n' 'best alien.'],...
+% DrawFormattedText(w,['Hint #3:' '\n\n\n' 'Try to take the spaceship to \n\n' 'the planet with the alien that \n\n' 'is currently the best.\n\n\n'  'Remember there is always one\n\n' 'best alien.'],...
+%     'center',ytext,[],wrap);
+DrawFormattedText(w,['Hint #3:' '\n\n\n' 'It''s important to choose \n\n' 'the spaceship that leads to the \n\n' ' alien that is currently the best to do well.\n\n\n'  'Remember there is always one\n\n' 'best alien.'],...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);

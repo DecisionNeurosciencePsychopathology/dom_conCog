@@ -39,9 +39,9 @@ stop=0;
 % [h_conting1,p_conting1,ci_conting1,stats_conting1] = ttest(contingency_1_data(1:2:end,:)',contingency_1_data(2:2:end,:)');
 % [h_conting2,p_conting2,ci_conting2,stats_conting2] = ttest(contingency_2_data(1:2:end,:)',contingency_2_data(2:2:end,:)');
 
-[h_stay,p_stay,ci_stay,stats_stay] = ttest(stay_data(1:2,:)',stay_data(3:end,:)')
-[h_shark,p_shark,ci_shark,stats_shark] = ttest(stay_shark_data(1:2:end,:)',stay_shark_data(2:2:end,:)')
-[h_block,p_block,ci_block,stats_block] = ttest( blk_data(:,:,1:2), blk_data(:,:,3:end))
+[h_stay,p_stay,ci_stay,stats_stay] = ttest(stay_data(1:2,:)',stay_data(3:end,:)');
+[h_shark,p_shark,ci_shark,stats_shark] = ttest(stay_shark_data(1:2:end,:)',stay_shark_data(2:2:end,:)');
+[h_block,p_block,ci_block,stats_block] = ttest( blk_data(:,:,1:2), blk_data(:,:,3:end));
 
 mean_stay_data = mean(stay_data,2);
 %Plot grand mean of pstay probailites

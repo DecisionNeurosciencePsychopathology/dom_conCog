@@ -2,16 +2,24 @@ function b = sharkmakeregressor(id)
 % Jon Wilson & Alex Dombrovski
 % 2015-10: Script creation
 
+%Take care of file creations
 data_dir_str= ['C:\kod\dom_conCog\shark_data'];
-filename = sprintf('C:\\kod\\dom_conCog\\regs\\shark%s.mat', id);
-data_dump_str=['C:\kod\dom_conCog\regs\'];
+filename = sprintf('C:\\kod\\dom_conCog\\regs\\%s\\shark%s.mat', id,id);
+data_dump_str=sprintf('C:\\kod\\dom_conCog\\regs\\%s\\',id);
+
+if ~exist(data_dump_str,'file')
+    mkdir(data_dump_str)
+    fprintf('Creating id specific reg folder in: %s\n\n',data_dump_str);
+end
+
+
 
 %Grab files and names
 files = dir(data_dir_str);
 %file_names = extractfield(files, 'name')';
 file_names = {files.name};
 %expression = ('\t*rs\d*'); %Need to add .txt and rerun these guys to grab proper file
-expression = ['.*_onsets.mat']; %Need to add .txt and rerun these guys to grab proper file
+expression = [id '.*_onsets.mat']; %Need to add .txt and rerun these guys to grab proper file
 %Regex
 ind = cellfun(@(x)( ~isempty(x) ), regexp(file_names, expression));
 
@@ -58,13 +66,21 @@ b.win_loss = b.win_trials + b.loss_trials.*-1;
 
 
 %Motor regressor
-%Since we didn't record the swaps, and can't reproduce just comment out for
-%now
-% right_index_level_1 =0;
-% left_index_level_1 =0;
-b.left_index_level_2 = (choice2==1);
-b.right_index_level_2 = (choice2==2);
+%11/30/15 use keycode 1 and 2 for motor regs
+b.left_index_level_1 =(keycode1==1);
+b.right_index_level_1 =(keycode1==2);
+b.left_index_level_2 = (keycode2==1);
+b.right_index_level_2 = (keycode2==2);
 
+%Combine both right and left right is positive
+b.right_left_index_level_1 = double(b.right_index_level_1);
+b.right_left_index_level_1(b.right_index_level_1==0) = -1;
+b.right_left_index_level_2 = double(b.right_index_level_2);
+b.right_left_index_level_2(b.right_index_level_2==0) = -1;
+
+%Freqeunt inFrequent
+b.frequent_trials = ((choice1==1 & state==2) | (choice1==2 & state==3));
+b.infrequent_trials = ~b.frequent_trials;
 
 %Shark trial or not
 b.shark_trials = zeros(1,trials);
@@ -91,7 +107,18 @@ b.rew_onset = rew_ons_ms;
 
 scan_tr = 1;
 %Via 3d_info
-block_length = 1651; %One mega block
+
+%Since we didn't have a specific time to run the scan till, we had to tell
+%the tech to stop the scan, as with TCAO, as a result the first 3 pilots
+%for this task had different scan block lengths...
+
+if strcmp('TCAO',id)
+    block_length = 1651; %One mega block
+elseif strcmp('MARLE',id)
+    block_length = 1712;
+elseif strcmp('JANO',id)
+    block_length = 1724;
+end
 tr = 0.1; %10Hz
 
 %% ask Alex for spm_hrf
@@ -102,7 +129,7 @@ frequency_scale_hz = 10;
 % this scale is in msec, but it is separated into bins of X
 % Hz (defined by 'frequency_scale' above. the resulting
 % output will be in the scale of X Hz.
-bin_size = 1/frequency_scale_hz*1000; % convert Hz to msec
+bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
 
 %Currently only 1 mega block
 %x = {1:exchangeNum; exchangeNum+1:2*exchangeNum; 2*exchangeNum+1:3*exchangeNum; 3*exchangeNum+1:4*exchangeNum;};
@@ -114,15 +141,16 @@ block_n=1;
 epoch_window = b.stim1_onset(1):bin_size:(b.rew_onset(end)+moneytime+jittertime);
 %epoch_window = b.stim1_onset(1):bin_size:b.stim1_onset(1)+scan_tr*block_length*1000;
 
+
 % for decision screens, RTs, from partnerchoice onset to response
 event_beg = b.stim1_onset;
 event_end = b.choice1_onset_ms;
-[b.stim_times.dec1_fsl,b.stim_times.dec1_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'decision_level_1_Times',1,1);
-[b.stim_times.switchStay_fsl,b.stim_times.switchStay_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'switch_stay_Times',b.switch_stay); %switch 1 loss -1
+[b.stim_times.dec1_fsl,b.stim_times.dec1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'decision_level_1_Times',1,1);
+[b.stim_times.switchStay_fsl,b.stim_times.switchStay_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'switch_stay_Times',b.switch_stay); %switch 1 stay -1
 
 %When using the -stim_times instead of the -stim_times_FSL option
-[b.stim_times.switch_fsl,b.stim_times.switch_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'switch_Times',b.switch_trials,1); 
-[b.stim_times.stay_fsl,b.stim_times.stay_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'stay_Times',b.stay_trials,1); 
+[b.stim_times.switch_fsl,b.stim_times.switch_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'switch_Times',b.switch_trials,1); 
+[b.stim_times.stay_fsl,b.stim_times.stay_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'stay_Times',b.stay_trials,1); 
 
 tmp_reg.(['regressors' num2str(block_n)]).decision_level_1 = ...
     createSimpleRegressor(event_beg,event_end,epoch_window);
@@ -130,9 +158,9 @@ tmp_reg.(['regressors' num2str(block_n)]).decision_level_1 = ...
 % for decision screens, RTs, from partnerchoice onset to response
 event_beg = b.stim2_onset;
 event_end = b.choice2_onset_ms;
-[b.stim_times.dec2_fsl,b.stim_times.dec2_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'decision_level_2_Times',1,1);
-[b.stim_times.left_fsl,b.stim_times.left_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'left_index',b.left_index_level_2,1);
-[b.stim_times.right_fsl,b.stim_times.right_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'right_index',b.right_index_level_2,1);
+[b.stim_times.dec2_fsl,b.stim_times.dec2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'decision_level_2_Times',1,1);
+[b.stim_times.left_fsl,b.stim_times.left_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'left_index',b.left_index_level_2,1);
+[b.stim_times.right_fsl,b.stim_times.right_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_index',b.right_index_level_2,1);
 tmp_reg.(['regressors' num2str(block_n)]).decision_level_2 = ...
     createSimpleRegressor(event_beg,event_end,epoch_window);
 
@@ -141,8 +169,8 @@ tmp_reg.(['regressors' num2str(block_n)]).decision_level_2 = ...
 %feedback.
 event_beg =  b.stim1_onset;
 event_end = b.rew_onset+moneytime;
-write3Ddeconv_startTimes(event_beg,event_end,'trial_Times');
-[b.stim_times.trial_fsl,b.stim_times.trial_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'trial_Times',1,1);
+%write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'trial_Times');
+[b.stim_times.trial_fsl,b.stim_times.trial_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'trial_Times',1,1);
 tmp_reg.(['regressors' num2str(block_n)]).trial = ...
     createSimpleRegressor(event_beg,event_end,epoch_window);
 
@@ -150,12 +178,65 @@ tmp_reg.(['regressors' num2str(block_n)]).trial = ...
 % for feedback, from feedback onset to feedback offset
 event_beg = b.rew_onset;
 event_end = b.rew_onset+moneytime;
-[b.stim_times.feed_fsl,b.stim_times.feed_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'feedback_Times',1,1);
-[b.stim_times.winLoass_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'win_loss_Times',b.win_loss); %wins are 1 loss is -1
-[b.stim_times.win_fsl,b.stim_times.win_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'win_Times',b.win_trials,1); %wins are 1 loss is -1
-[b.stim_times.loss_fsl,b.stim_times.loss_spmg]=write3Ddeconv_startTimes(event_beg,event_end,'loss_Times',b.loss_trials,1); %wins are 1 loss is -1
+[b.stim_times.feed_fsl,b.stim_times.feed_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'feedback_Times',1,1);
+[b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'win_loss_Times',b.win_loss); %wins are 1 loss is -1
+[b.stim_times.win_fsl,b.stim_times.win_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'win_Times',b.win_trials,1); %Only win trials
+[b.stim_times.loss_fsl,b.stim_times.loss_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'loss_Times',b.loss_trials,1); %Only loss trials
 tmp_reg.(['regressors' num2str(block_n)]).feedback = ...
     createSimpleRegressor(event_beg,event_end,epoch_window);
+
+
+%%%% DMUBLOCK %%%%
+%12/1/15 JW: Because we aren't getting very good maps when looking at
+%regressors, but seeing activity via the R^2, let's create a trial
+%regressor by combining everything except the "jitters" aka the ISI and
+%ITI.
+%Trial
+event_beg = sort([stim1_ons_ms stim2_ons_ms]);
+event_end=sort([(choice1_ons_ms+isitime) (rew_ons_ms+moneytime)]);
+[b.stim_times.feed_fsl,b.stim_times.feed_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'trialNoJitters',1);
+%Decision 1
+event_beg = b.stim1_onset;
+event_end = choice1_ons_ms+isitime;
+[b.stim_times.dec1_fsl,b.stim_times.dec1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'decision_level_1_Times',1);
+%Switch stay
+[b.stim_times.switchStay_fsl,b.stim_times.switchStay_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'switch_stay_Times',b.switch_stay); %switch 1 stay -1
+
+%Motor level 1
+event_beg = b.stim1_onset;
+event_end = choice1_ons_ms;
+[b.stim_times.left_1_fsl,b.stim_times.left_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'left_index_level_1',b.left_index_level_1);
+[b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_index_level_1',b.right_index_level_1);
+[b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_1',b.right_left_index_level_1);
+
+
+%Decision 2
+event_beg = b.stim2_onset;
+event_end = b.choice2_onset_ms+isitime;
+[b.stim_times.dec2_fsl,b.stim_times.dec2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'decision_level_2_Times',1);
+[b.stim_times.feq_trials_fsl,b.stim_times.feq_trials_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'freq_infreq_Times',(b.frequent_trials+(b.infrequent_trials*-1)));
+%Motor level 2
+event_beg = b.stim2_onset;
+event_end = choice2_ons_ms;
+[b.stim_times.left_2_fsl,b.stim_times.left_2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'left_index_level_2',b.left_index_level_2);
+[b.stim_times.right_2_fsl,b.stim_times.right_2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_index_level_2',b.right_index_level_2);
+[b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_2',b.right_left_index_level_2);
+
+
+%Feedback
+event_beg = b.rew_onset;
+event_end = b.rew_onset+moneytime;
+[b.stim_times.feed_fsl,b.stim_times.feed_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'feedback_Times',1);
+%Win/Loss 1/-1
+[b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'win_loss_Times',b.win_loss); %wins are 1 loss is -1
+[b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'win_loss_Times_win_minus1',(b.win_loss*-1)); %wins are 1 loss is -1
+%[b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'win_loss_TimesMC',b.win_loss-mean(b.win_loss)); %wins are 1 loss is -1
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%
 
 %create to_censor vector
 %% AD: I haven't checked this
@@ -179,6 +260,11 @@ for n = 1:numel(hrfregs)
     %% ask Alex for gsresample
     % cut off the tail after convolution and downsample
     tmp = gsresample(tmp_reg.(['hrfreg' num2str(block_n)]).(hrfregs{n}),10,1./scan_tr);
+    %If the scanner runs for to long the tmp var is too short
+    if length(tmp)<block_length(block_n)
+        zeros_to_add = block_length(block_n)-length(tmp);
+        tmp = [tmp zeros(1,zeros_to_add)];
+    end
     tmp_reg.(['hrfreg' num2str(block_n)]).(hrfregs{n}) = tmp(1:block_length(block_n)-1); %should be tmp(1:block_length) where block_length = the total number of TRs that the scanner ran
     
     fprintf('Percent complete...%.2f\n',n/numel(hrfregs))
@@ -329,10 +415,10 @@ foo = tmp;
 return
 
 
-function [x,y]=write3Ddeconv_startTimes(event_beg,event_end,fname,censor,noFSL)
+function [x,y]=write3Ddeconv_startTimes(file_loc,event_beg,event_end,fname,censor,noFSL)
 
-if nargin <5
-    censor = 1;
+if nargin <6
+    %censor = 1;
     noFSL=0;
 end
 format long
@@ -340,10 +426,11 @@ x(:,1) = event_beg';
 x(:,2) = event_end'-event_beg';
 x=x./1000; %Convert to seconds
 x(:,3) = ones(length(x),1).*censor';
+
 %write the -stim_times_FSL
 if ~noFSL
     %Save to regs folder
-    dlmwrite(['regs/' fname '.dat'],x,'delimiter','\t','precision','%.6f')
+    dlmwrite([file_loc fname '.dat'],x,'delimiter','\t','precision','%.6f')
     y=0;
 else
     %write the -stim_times file
@@ -351,7 +438,7 @@ else
     y = x(logical(x(:,3)),1)';
     %Quick fix hack for just first ten trials troubleshoot SPMG2
     %y = y(1:10);
-    dlmwrite(['regs/' fname '.dat'],y,'delimiter','\t','precision','%.6f')
+    dlmwrite([file_loc fname '.dat'],y,'delimiter','\t','precision','%.6f')
 end
 return
     

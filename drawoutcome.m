@@ -17,4 +17,5 @@ end
 [sl,ms] = slicewrapper;
 
 Screen('Flip',window);
+%This could return reward offset I believe...
 waitwrapper(ms + moneytime);

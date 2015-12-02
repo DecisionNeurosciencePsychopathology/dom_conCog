@@ -3,124 +3,129 @@
 %Matlab version: 2015a
 %Date created: 10/16/2015
 
-function [ret, stay_data, stay_shark_data, block_data]=run_shark_analysis(file_name,fig_num)
-    %file_name = [file_name '.txt'];
-    data = read_in_file(file_name);
-    
-    if ~isempty(strfind(file_name,'LBK')) || ~isempty(strfind(file_name,'CAB')) || ~isempty(strfind(file_name,'JMF')) || ~isempty(strfind(file_name,'RSA')) || ~isempty(strfind(file_name,'HAS')) || ~isempty(strfind(file_name,'TCAO'))
-        data.contingency = ones(1,length(data.choice1))';
-    else
-        data.contingency = repmat(2,1,length(data.choice1))'; 
-    end
-    %Create trial indexes of win/loss, common/rare, and stay/switch trials
-    win_trials = find(data.won==1);
-    loss_trials = find(data.won==0);
-       
-    common_trials = data.trial((data.choice1==1 & data.state==2) | (data.choice1==2 & data.state==3));
-    rare_trials = data.trial((data.choice1==1 & data.state==3) | (data.choice1==2 & data.state==2));
-    
-    stay_trials = data.trial(data.choice1 == [data.choice1(2:end); 0]);
-    switch_trials = data.trial(data.choice1 ~= [data.choice1(2:end); 0]);
-    
-    %Probably a better way to do this but it works
-    %Find the win/loss_common/rare trials
+function [ret, stay_data, stay_shark_data, block_data, data]=run_shark_analysis(file_name,fig_num)
+%file_name = [file_name '.txt'];
+data = read_in_file(file_name);
+
+%11/30/15 contingency is now returned as a variable
+if ~isempty(strfind(file_name,'LBK')) || ~isempty(strfind(file_name,'CAB')) || ~isempty(strfind(file_name,'JMF')) || ~isempty(strfind(file_name,'RSA')) || ~isempty(strfind(file_name,'HAS')) || ~isempty(strfind(file_name,'TCAO'))
+    data.contingency = ones(1,length(data.choice1))';
+else
+    data.contingency = repmat(2,1,length(data.choice1))';
+end
+%Create trial indexes of win/loss, common/rare, and stay/switch trials
+win_trials = find(data.won==1);
+loss_trials = find(data.won==0);
+
+%Left choice = 1 Right choice = 2
+%11/30/15 only the rockets switch sides, keycode1 = the actual decision
+%i.e. did they chose left or right, choice is what rocket they chose blue being 1
+%Green being 2.
+common_trials = data.trial((data.choice1==1 & data.state==2) | (data.choice1==2 & data.state==3));
+rare_trials = data.trial((data.choice1==1 & data.state==3) | (data.choice1==2 & data.state==2));
+
+stay_trials = data.trial(data.choice1 == [data.choice1(2:end); 0]);
+switch_trials = data.trial(data.choice1 ~= [data.choice1(2:end); 0]);
+
+%Probably a better way to do this but it works
+%Find the win/loss_common/rare trials
 %     [~, win_common_trials]=ismember(win_trials,common_trials);
-%     
+%
 %     %We can cut this down by just saying    win_common_trials=win_trials(ismember(win_trials,common_trials));
 %     win_common_trials=common_trials(win_common_trials(win_common_trials~=0));
-%     
-%    
+%
+%
 %     [~, loss_common_trials]=ismember(loss_trials,common_trials);
 %     loss_common_trials=common_trials(loss_common_trials(loss_common_trials~=0));
-%     
+%
 %     [~, win_rare_trials]=ismember(win_trials,rare_trials);
 %     win_rare_trials=rare_trials(win_rare_trials(win_rare_trials~=0));
-%     
+%
 %     [~, loss_rare_trials]=ismember(loss_trials,rare_trials);
 %     loss_rare_trials=rare_trials(loss_rare_trials(loss_rare_trials~=0));
-    
-    
-    
-    win_common_trials=win_trials(ismember(win_trials,common_trials));
-    loss_common_trials = loss_trials(ismember(loss_trials,common_trials));
-    win_rare_trials=win_trials(ismember(win_trials,rare_trials));
-    loss_rare_trials=loss_trials(ismember(loss_trials,rare_trials));
-    
-    
-    %Find stay probabilites
+
+
+
+win_common_trials=win_trials(ismember(win_trials,common_trials));
+loss_common_trials = loss_trials(ismember(loss_trials,common_trials));
+win_rare_trials=win_trials(ismember(win_trials,rare_trials));
+loss_rare_trials=loss_trials(ismember(loss_trials,rare_trials));
+
+
+%Find stay probabilites
 %     [~, win_common_stay_trials]=ismember(win_common_trials,stay_trials);
 %     win_common_stay_trials=stay_trials(win_common_stay_trials(win_common_stay_trials~=0));
-%     
+%
 %     [~, loss_common_stay_trials]=ismember(loss_common_trials,stay_trials);
 %     loss_common_stay_trials=stay_trials(loss_common_stay_trials(loss_common_stay_trials~=0));
-%     
+%
 %     [~, win_rare_stay_trials]=ismember(win_rare_trials,stay_trials);
 %     win_rare_stay_trials=stay_trials(win_rare_stay_trials(win_rare_stay_trials~=0));
-%     
+%
 %     [~, loss_rare_stay_trials]=ismember(loss_rare_trials,stay_trials);
 %     loss_rare_stay_trials=stay_trials(loss_rare_stay_trials(loss_rare_stay_trials~=0));
-    
-    
-    win_common_stay_trials=win_common_trials(ismember(win_common_trials,stay_trials));
-    loss_common_stay_trials=loss_common_trials(ismember(loss_common_trials,stay_trials));
-    win_rare_stay_trials=win_rare_trials(ismember(win_rare_trials,stay_trials));
-    loss_rare_stay_trials=loss_rare_trials(ismember(loss_rare_trials,stay_trials));
 
-    
-    
-    
-    
-    win_common_stay_pct = length(win_common_stay_trials)/(length(win_common_trials));
-    win_rare_stay_pct = length(win_rare_stay_trials)/(length(win_rare_trials));
-    loss_common_stay_pct = length(loss_common_stay_trials)/(length(loss_common_trials));
-    loss_rare_stay_pct = length(loss_rare_stay_trials)/(length(loss_rare_trials));
-    
-    %Grab the probabilites by block
-    a = [0 50; 51 100; 101 150; 151 250;];
-    win_common_stay_pct_by_block = [];
-    win_rare_stay_pct_by_block = [];
-    loss_common_stay_pct_by_block = [];
-    loss_rare_stay_pct_by_block = [];
-    
-    for j = 1:length(a)
-        win_common_stay_pct_by_block = [win_common_stay_pct_by_block length(win_common_stay_trials(a(j,1)<=win_common_stay_trials & win_common_stay_trials<=a(j,2)))/(length(win_common_trials(a(j,1)<=win_common_trials & win_common_trials<=a(j,2))))];
-        win_rare_stay_pct_by_block = [win_rare_stay_pct_by_block length(win_rare_stay_trials(a(j,1)<=win_rare_stay_trials & win_rare_stay_trials<=a(j,2)))/(length(win_rare_trials(a(j,1)<=win_rare_trials & win_rare_trials<=a(j,2))))];
-        loss_common_stay_pct_by_block = [loss_common_stay_pct_by_block length(loss_common_stay_trials(a(j,1)<=loss_common_stay_trials & loss_common_stay_trials<=a(j,2)))/(length(loss_common_trials(a(j,1)<=loss_common_trials & loss_common_trials<=a(j,2))))];
-        loss_rare_stay_pct_by_block = [loss_rare_stay_pct_by_block length(loss_rare_stay_trials(a(j,1)<=loss_rare_stay_trials & loss_rare_stay_trials<=a(j,2)))/(length(loss_rare_trials(a(j,1)<=loss_rare_trials & loss_rare_trials<=a(j,2))))];
-    end
-    
-    block_data(:,:,1) = win_common_stay_pct_by_block;
-    block_data(:,:,2) = win_rare_stay_pct_by_block;
-    block_data(:,:,3) = loss_common_stay_pct_by_block;
-    block_data(:,:,4) = loss_rare_stay_pct_by_block;
-    
-    
-    % sum(a<=50)
-    % sum(51<=a &a<=100)
-    % sum(101<=a &a<=150)
-    % sum(151<=a )
-    
-    %Make some quick checks on vector lengths
-    if length(win_rare_trials) + length(loss_rare_trials) ~= length(rare_trials)
-        error('Rare trials don''t add up! This is bad!');
-    elseif length(win_common_trials) + length(loss_common_trials) ~= length(common_trials)
-        error('Common trials don''t add up! This is bad!');
-    end
-    
-    
-    %These are just frequencies
+
+win_common_stay_trials=win_common_trials(ismember(win_common_trials,stay_trials));
+loss_common_stay_trials=loss_common_trials(ismember(loss_common_trials,stay_trials));
+win_rare_stay_trials=win_rare_trials(ismember(win_rare_trials,stay_trials));
+loss_rare_stay_trials=loss_rare_trials(ismember(loss_rare_trials,stay_trials));
+
+
+
+
+
+win_common_stay_pct = length(win_common_stay_trials)/(length(win_common_trials));
+win_rare_stay_pct = length(win_rare_stay_trials)/(length(win_rare_trials));
+loss_common_stay_pct = length(loss_common_stay_trials)/(length(loss_common_trials));
+loss_rare_stay_pct = length(loss_rare_stay_trials)/(length(loss_rare_trials));
+
+%Grab the probabilites by block
+a = [0 50; 51 100; 101 150; 151 250;];
+win_common_stay_pct_by_block = [];
+win_rare_stay_pct_by_block = [];
+loss_common_stay_pct_by_block = [];
+loss_rare_stay_pct_by_block = [];
+
+for j = 1:length(a)
+    win_common_stay_pct_by_block = [win_common_stay_pct_by_block length(win_common_stay_trials(a(j,1)<=win_common_stay_trials & win_common_stay_trials<=a(j,2)))/(length(win_common_trials(a(j,1)<=win_common_trials & win_common_trials<=a(j,2))))];
+    win_rare_stay_pct_by_block = [win_rare_stay_pct_by_block length(win_rare_stay_trials(a(j,1)<=win_rare_stay_trials & win_rare_stay_trials<=a(j,2)))/(length(win_rare_trials(a(j,1)<=win_rare_trials & win_rare_trials<=a(j,2))))];
+    loss_common_stay_pct_by_block = [loss_common_stay_pct_by_block length(loss_common_stay_trials(a(j,1)<=loss_common_stay_trials & loss_common_stay_trials<=a(j,2)))/(length(loss_common_trials(a(j,1)<=loss_common_trials & loss_common_trials<=a(j,2))))];
+    loss_rare_stay_pct_by_block = [loss_rare_stay_pct_by_block length(loss_rare_stay_trials(a(j,1)<=loss_rare_stay_trials & loss_rare_stay_trials<=a(j,2)))/(length(loss_rare_trials(a(j,1)<=loss_rare_trials & loss_rare_trials<=a(j,2))))];
+end
+
+block_data(:,:,1) = win_common_stay_pct_by_block;
+block_data(:,:,2) = win_rare_stay_pct_by_block;
+block_data(:,:,3) = loss_common_stay_pct_by_block;
+block_data(:,:,4) = loss_rare_stay_pct_by_block;
+
+
+% sum(a<=50)
+% sum(51<=a &a<=100)
+% sum(101<=a &a<=150)
+% sum(151<=a )
+
+%Make some quick checks on vector lengths
+if length(win_rare_trials) + length(loss_rare_trials) ~= length(rare_trials)
+    error('Rare trials don''t add up! This is bad!');
+elseif length(win_common_trials) + length(loss_common_trials) ~= length(common_trials)
+    error('Common trials don''t add up! This is bad!');
+end
+
+
+%These are just frequencies
 %     win_common_pct = length(win_common_trials)/length(common_trials);
 %     win_rare_pct = length(win_rare_trials)/length(rare_trials);
 %     loss_common_pct = length(loss_common_trials)/length(common_trials);
 %     loss_rare_pct = length(loss_rare_trials)/length(rare_trials);
-    
+
 %     %Make Daw-esqe figure
 %     y = [win_common_pct win_rare_pct; loss_common_pct loss_rare_pct];
 %     b = bar(y);
 %     b(2).FaceColor = 'r';
 %     title('Analysis of Choice Behavior')
-%     
-    
+%
+
 %Print out some data
 fprintf('Subject %d\n',fig_num)
 fprintf('Total wins: %d\n', sum(data.won))
@@ -184,36 +189,36 @@ loss_rare_stay_no_shark_pct = length(loss_rare_stay_no_shark_trials)/(length(los
 
 
 
-    %Make Daw-esqe figure
-    figure(1)
-    subplot(5,2,fig_num)
-    stay_data = [win_common_stay_pct win_rare_stay_pct; loss_common_stay_pct loss_rare_stay_pct];
-    b = bar(stay_data);
-    b(2).FaceColor = 'r';
-    title(['Analysis of Choice Behavior for subject' num2str(fig_num)])
-    %set(b,'xtick',1)
-    name = {'Reward'; 'Loss'};
-    set(gca,'xticklabel',name,'fontsize',9)
-    if fig_num==1
-        legend('Common', 'Rare')
-    end
+%Make Daw-esqe figure
+figure(1)
+subplot(5,2,fig_num)
+stay_data = [win_common_stay_pct win_rare_stay_pct; loss_common_stay_pct loss_rare_stay_pct];
+b = bar(stay_data);
+b(2).FaceColor = 'r';
+title(['Analysis of Choice Behavior for subject' num2str(fig_num)])
+%set(b,'xtick',1)
+name = {'Reward'; 'Loss'};
+set(gca,'xticklabel',name,'fontsize',9)
+if fig_num==1
+    legend('Common', 'Rare')
+end
 
-        %Make Daw-esqe figure with shark graph
-    figure(2)
-    subplot(5,2,fig_num)
-    stay_shark_data = [win_common_stay_shark_pct win_common_stay_no_shark_pct; win_rare_stay_shark_pct win_rare_stay_no_shark_pct;...
-        loss_common_stay_shark_pct loss_common_stay_no_shark_pct; loss_rare_stay_shark_pct loss_rare_stay_no_shark_pct];
-    b = bar(stay_shark_data);
-    b(2).FaceColor = 'r';
-    title(['Analysis of Choice Behavior for subject' num2str(fig_num)])
-    %set(b,'xtick',1)
-    name = {'Reward-Shark'; 'Reward-No Shark'; 'Loss-Shark'; 'Loss- No Shark'};
-    set(gca,'xticklabel',name,'fontsize',9)
-    if fig_num==1
-        legend('Common', 'Rare')
-    end
-    
-    
+%Make Daw-esqe figure with shark graph
+figure(2)
+subplot(5,2,fig_num)
+stay_shark_data = [win_common_stay_shark_pct win_common_stay_no_shark_pct; win_rare_stay_shark_pct win_rare_stay_no_shark_pct;...
+    loss_common_stay_shark_pct loss_common_stay_no_shark_pct; loss_rare_stay_shark_pct loss_rare_stay_no_shark_pct];
+b = bar(stay_shark_data);
+b(2).FaceColor = 'r';
+title(['Analysis of Choice Behavior for subject' num2str(fig_num)])
+%set(b,'xtick',1)
+name = {'Reward-Shark'; 'Reward-No Shark'; 'Loss-Shark'; 'Loss- No Shark'};
+set(gca,'xticklabel',name,'fontsize',9)
+if fig_num==1
+    legend('Common', 'Rare')
+end
+
+
 %         figure(3)
 %     subplot(5,2,fig_num)
 %     stay_shark_data = [win_common_stay_shark_pct win_common_stay_no_shark_pct; win_rare_stay_shark_pct win_rare_stay_no_shark_pct;...
@@ -227,33 +232,51 @@ loss_rare_stay_no_shark_pct = length(loss_rare_stay_no_shark_trials)/(length(los
 %     if fig_num==1
 %         legend('Common', 'Rare')
 %     end
-    
-        
-    %Rewrite these so its not confusing anymore
-    stay_data = [win_common_stay_pct; win_rare_stay_pct; loss_common_stay_pct; loss_rare_stay_pct];
-    stay_shark_data = [win_common_stay_shark_pct; win_common_stay_no_shark_pct; win_rare_stay_shark_pct; win_rare_stay_no_shark_pct;...
-        loss_common_stay_shark_pct; loss_common_stay_no_shark_pct; loss_rare_stay_shark_pct; loss_rare_stay_no_shark_pct];
-    
 
-    %Save resutls in ret struct
-    ret.win_common_stay_pct=win_common_stay_pct;
-    ret.win_rare_stay_pct=win_rare_stay_pct;
-    ret.loss_common_stay_pct=loss_common_stay_pct;
-    ret.loss_rare_stay_pct=loss_rare_stay_pct;
-    ret.win_common_stay_shark_pct= win_common_stay_shark_pct;
-    ret.win_common_stay_no_shark_pct=win_common_stay_no_shark_pct;
-    ret.win_rare_stay_shark_pct=win_rare_stay_shark_pct;
-    ret.win_rare_stay_no_shark_pct=win_rare_stay_no_shark_pct;
-    ret.loss_common_stay_shark_pct=loss_common_stay_shark_pct;
-    ret.loss_common_stay_no_shark_pct=loss_common_stay_no_shark_pct;
-    ret.loss_rare_stay_shark_pct=loss_rare_stay_shark_pct;
-    ret.loss_rare_stay_no_shark_pct=loss_rare_stay_no_shark_pct;
-    ret.contingency = contingency;
-    
-    
-    %stay_data = reshape(stay_data,1,numel(stay_data))';
-    %stay_shark_data = reshape(stay_shark_data,1,numel(stay_data)*size(stay_shark_data,2))';
+
+%Rewrite these so its not confusing anymore
+stay_data = [win_common_stay_pct; win_rare_stay_pct; loss_common_stay_pct; loss_rare_stay_pct];
+stay_shark_data = [win_common_stay_shark_pct; win_common_stay_no_shark_pct; win_rare_stay_shark_pct; win_rare_stay_no_shark_pct;...
+    loss_common_stay_shark_pct; loss_common_stay_no_shark_pct; loss_rare_stay_shark_pct; loss_rare_stay_no_shark_pct];
+
+
+%Save resutls in ret struct
+ret.win_common_stay_pct=win_common_stay_pct;
+ret.win_rare_stay_pct=win_rare_stay_pct;
+ret.loss_common_stay_pct=loss_common_stay_pct;
+ret.loss_rare_stay_pct=loss_rare_stay_pct;
+ret.win_common_stay_shark_pct= win_common_stay_shark_pct;
+ret.win_common_stay_no_shark_pct=win_common_stay_no_shark_pct;
+ret.win_rare_stay_shark_pct=win_rare_stay_shark_pct;
+ret.win_rare_stay_no_shark_pct=win_rare_stay_no_shark_pct;
+ret.loss_common_stay_shark_pct=loss_common_stay_shark_pct;
+ret.loss_common_stay_no_shark_pct=loss_common_stay_no_shark_pct;
+ret.loss_rare_stay_shark_pct=loss_rare_stay_shark_pct;
+ret.loss_rare_stay_no_shark_pct=loss_rare_stay_no_shark_pct;
+ret.contingency = contingency;
+
+
+%stay_data = reshape(stay_data,1,numel(stay_data))';
+%stay_shark_data = reshape(stay_shark_data,1,numel(stay_data)*size(stay_shark_data,2))';
 function data = read_in_file(file)
-    format_spec = '%d%d%f%f%f%f%f%d%d%f%f%f%f%f%s%d%d';
-    data = readtable(file,'Delimiter','\t', 'Format',format_spec);
-    
+
+%This must be full address
+M=dlmread(file,',',3,0); 
+
+%Grab first line of data
+data_template = M(1,:);
+clear M;
+
+str_fmt=[]; %automate str formatting
+for i = 1:size(data_template,2)
+    if ischar(data_template(1,i))
+        tempstr = '%s';
+    elseif round(data_template(1,i))~=data_template(1,i)
+        tempstr = '%f';
+    else
+        tempstr = '%d';
+    end
+    str_fmt = strcat(str_fmt,tempstr);
+end
+data = readtable(file,'Delimiter','\t', 'Format',str_fmt);
+
