@@ -207,7 +207,7 @@ event_beg = b.stim1_onset;
 event_end = choice1_ons_ms;
 [b.stim_times.left_1_fsl,b.stim_times.left_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'left_index_level_1',b.left_index_level_1);
 [b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_index_level_1',b.right_index_level_1);
-[b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_1',b.right_left_index_level_1);
+[b.stim_times.right_left_1_fsl,b.stim_times.right_left_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_1',b.right_left_index_level_1);
 
 
 %Decision 2
@@ -220,7 +220,16 @@ event_beg = b.stim2_onset;
 event_end = choice2_ons_ms;
 [b.stim_times.left_2_fsl,b.stim_times.left_2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'left_index_level_2',b.left_index_level_2);
 [b.stim_times.right_2_fsl,b.stim_times.right_2_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_index_level_2',b.right_index_level_2);
-[b.stim_times.right_1_fsl,b.stim_times.right_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_2',b.right_left_index_level_2);
+[b.stim_times.right_left_1_fsl,b.stim_times.right_left_1_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index_level_2',b.right_left_index_level_2);
+
+
+%Full motor
+event_beg = sort([b.stim1_onset b.stim2_onset]);
+event_end = sort([choice1_ons_ms choice2_ons_ms;]);
+b.right_left_index = zeros(1,400);
+b.right_left_index(1:2:end) = b.right_left_index_level_1;
+b.right_left_index(2:2:end) = b.right_left_index_level_2;
+[b.stim_times.right_left_fsl,b.stim_times.right_left_spmg]=write3Ddeconv_startTimes(data_dump_str,event_beg,event_end,'right_left_index',b.right_left_index);
 
 
 %Feedback
