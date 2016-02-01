@@ -1,4 +1,4 @@
-function [w, choice1, choice2,state, pos1, pos2 ,money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short()
+function [w, choice1, choice2,state, pos1, pos2 ,money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short(self_paced_flag)
 %MBMFtutorial
 % tutorial for sequential choice task
 % This is the PC version.
@@ -44,7 +44,7 @@ Priority(MaxPriority(w));
 totaltrials=40;    %total number of trials in the task
 shark_trials = 12; %total number of shark trials
 %11/16/15 tutorial is 70/30
-transprob = .7;    % probability of 'correct' transition 
+transprob = .7;    % probability of 'correct' transition
 
 [xres,yres] = Screen('windowsize',w);
 xcenter = xres/2;
@@ -67,7 +67,13 @@ animypos = 0:50:250;
 moneytime = 1500;
 % isitime = round(500 / 90);
 % ititime = round(500 / 90);
-truechoicetime = 3000;
+
+%Is the practiced completely self paced
+if ~self_paced_flag
+    truechoicetime = 3000;
+else
+    truechoicetime = inf;
+end
 isitime = 1000;
 ititime = 1000;
 
@@ -573,7 +579,7 @@ shark_attack_block=1;
 InitializePsychSound;
 
 for trial = 1:shark_trials %Number of shark trials
-
+    
     Screen('Flip',w);
     %After shark attack
     if ismember(trial, attack+1)
@@ -646,32 +652,32 @@ for trial = 1:shark_trials %Number of shark trials
     
     %Shark attack!!!
     if ismember(trial,attack); shark_attack(w,cosmic_shark); end
-%     if ismember(trial,attack)
-%         [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
-%         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-%         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-%         Screen('Flip',w);
-%         WaitSecs(wav_time) %We can change the wait time to whatever...
-%         % Stop playback:
-%         PsychPortAudio('Stop', pahandle);
-%         
-%         % Close the audio device:
-%         PsychPortAudio('Close', pahandle);
-%     end
+    %     if ismember(trial,attack)
+    %         [pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+    %         t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+    %         Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+    %         Screen('Flip',w);
+    %         WaitSecs(wav_time) %We can change the wait time to whatever...
+    %         % Stop playback:
+    %         PsychPortAudio('Stop', pahandle);
+    %
+    %         % Close the audio device:
+    %         PsychPortAudio('Close', pahandle);
+    %     end
 end %End shark practice loop
 
 %Figure out how much they won
-totalwon = sum(money) + sum(money2); 
+totalwon = sum(money) + sum(money2);
 total_after_shark = (totalwon*.25)+ 10 - 10; %$10 endowment?
 total_before_scanner = total_after_shark + 20;
 
-DrawFormattedText(w,['End of the tutorial \n\n' 'Your total winnings are ',num2str(total_after_shark) ],... 
+DrawFormattedText(w,['End of the tutorial \n\n' 'Your total winnings are ',num2str(total_after_shark) ],...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
 
 DrawFormattedText(w,['You''re awarded an addional $20 for the scanner task \n\n'...
-    'Bringing your total to ',num2str(total_before_scanner),' when you enter \n\n' 'the scanner'],... 
+    'Bringing your total to ',num2str(total_before_scanner),' when you enter \n\n' 'the scanner'],...
     'center',ytext,[],wrap);
 Screen('Flip',w);
 KbWait([],2);
@@ -694,14 +700,14 @@ Screen('Close');
 
 
 function shark_attack(w,cosmic_shark)
-        %[pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
-        [pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
-        t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
-        Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
-        Screen('Flip',w);
-        WaitSecs(wav_time) %We can change the wait time to whatever...
-        % Stop playback:
-        PsychPortAudio('Stop', pahandle);
-        
-        % Close the audio device:
-        PsychPortAudio('Close', pahandle);
+%[pahandle, wav_time]=prep_sound('C:\kod\dom_conCog\sounds\Monster_Gigante.wav');
+[pahandle, wav_time]=prep_sound('sounds\Monster_Gigante.wav');
+t1 = PsychPortAudio('Start', pahandle, 1, 0, 1);
+Screen('DrawTexture',w,cosmic_shark,[],[]); %draw shark might be able to have higher pic dimmensions!
+Screen('Flip',w);
+WaitSecs(wav_time) %We can change the wait time to whatever...
+% Stop playback:
+PsychPortAudio('Stop', pahandle);
+
+% Close the audio device:
+PsychPortAudio('Close', pahandle);

@@ -3,12 +3,12 @@ function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
     stim1_ons_sl, stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, ...
     stim2_ons_sl, stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, ...
     rew_ons_sl, rew_ons_ms, payoff, attack, warnings, swap_hist,...
-    keycode1, keycode2] = NPL_MBMFtaskPC_final(name, contingency, pre_total, w)
+    keycode1, keycode2] = NPL_MBMFtaskPC_final(name, contingency, self_paced_flag, pre_total, w)
 %MBMFtask
 % sequential choice expt
 % ND, October 2006
 
-clearvars -except name gender dob age w contingency pre_total
+clearvars -except name gender dob age w contingency pre_total self_paced_flag
 
 KbName('UnifyKeyNames');
 
@@ -63,7 +63,13 @@ animypos = 0:50:250;
 moneytime = 1500;
 isitime = 1000;
 ititime = 1000;
-choicetime = 3000;
+
+%Alex wanted self paced verios of task
+if ~self_paced_flag
+    choicetime = 3000;
+else
+    choicetime = inf;
+end
 
 preStartWait = 8.0; %initial fixation
 
@@ -626,6 +632,9 @@ end
 %totalwon = sum(money(rewardedtrials));
 totalwon = sum(money)*.25 + pre_total - 25;
 
+
+%Just to be safe save the entire workspace
+save(sprintf('%s_workspace_ouput',name));
 
 
 % Ask the transition Question

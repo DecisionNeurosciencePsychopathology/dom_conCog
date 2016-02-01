@@ -14,12 +14,17 @@ while ismember(contingency, [1 2])==0
     contingency = input('Which version would you like to run (1 or 2): ');
 end
 
+self_paced_flag =nan;
+while ismember(self_paced_flag, [0 1])==0
+    self_paced_flag = input('Is this self paced (1) or not (0): ');
+end
+
 inmri =99;
 while ismember(inmri, [1 0])==0
     inmri = input('Is this and fMRI scan (yes=1 or no=0): ');
 end
 
-[window, choice1, choice2, state, pos1, pos2, money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short();
+[window, choice1, choice2, state, pos1, pos2, money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short(self_paced_flag);
 save([name '_' num2str(now*1000,9) '_tutorial'], 'choice1', 'choice2', 'state', 'pos1', 'pos2', 'money', 'rts1', 'rts2', 'contingency')
 
 %If not an frmi scan run the behav. version
@@ -27,7 +32,7 @@ save([name '_' num2str(now*1000,9) '_tutorial'], 'choice1', 'choice2', 'state', 
     [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, stim1_ons_sl, ...
     stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, stim2_ons_sl, ...
     stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, rew_ons_sl, ...
-    rew_ons_ms, payoff, attack, warnings, swap_hist,keycode1,keycode2] = NPL_MBMFtaskPC_final(name, contingency,total_before_scanner, window);
+    rew_ons_ms, payoff, attack, warnings, swap_hist,keycode1,keycode2] = NPL_MBMFtaskPC_final(name, contingency, self_paced_flag, total_before_scanner, window);
 % else
 % [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, stim1_ons_sl, ...
 %     stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, stim2_ons_sl, ...
