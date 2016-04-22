@@ -24,15 +24,27 @@ while ismember(inmri, [1 0])==0
     inmri = input('Is this and fMRI scan (yes=1 or no=0): ');
 end
 
-[window, choice1, choice2, state, pos1, pos2, money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short(self_paced_flag);
-save([name '_' num2str(now*1000,9) '_tutorial'], 'choice1', 'choice2', 'state', 'pos1', 'pos2', 'money', 'rts1', 'rts2', 'contingency')
+total_before_scanner_flag =99;
+while ismember(total_before_scanner_flag, 1)==0
+    total_before_scanner = input('What was the subject''s total from the practice: ');
+    fprintf('\nTotal before scanner was %.2f, is this correct?\n',total_before_scanner)
+    total_before_scanner_flag = input('\nYes=1, No=2: ');
+end
+
+%We run the practice outside the scanner
+% [window, choice1, choice2, state, pos1, pos2, money, rts1, rts2, total_before_scanner]=MBMFtutorialPC_short(self_paced_flag);
+% save([name '_' num2str(now*1000,9) '_tutorial'], 'choice1', 'choice2', 'state', 'pos1', 'pos2', 'money', 'rts1', 'rts2', 'contingency')
+
+%NOTE!!
+%for future realase it might be a good idea to set up the window here
+
 
 %If not an frmi scan run the behav. version
 % if inmri==1
     [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, stim1_ons_sl, ...
     stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, stim2_ons_sl, ...
     stim2_ons_ms, choice2_ons_sl, choice2_ons_ms, rew_ons_sl, ...
-    rew_ons_ms, payoff, attack, warnings, swap_hist,keycode1,keycode2] = NPL_MBMFtaskPC_final(name, contingency, self_paced_flag, total_before_scanner, window);
+    rew_ons_ms, payoff, attack, warnings, swap_hist,keycode1,keycode2, jitter_time] = NPL_MBMFtaskPC_final(name, contingency, self_paced_flag, total_before_scanner);
 % else
 % [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, stim1_ons_sl, ...
 %     stim1_ons_ms, choice1_ons_sl, choice1_ons_ms, stim2_ons_sl, ...
@@ -45,4 +57,7 @@ save(['_', name '_' num2str(now*1000,9) '_onsets'], 'choice1', 'choice2', 'state
     'choice1_ons_sl', 'choice1_ons_ms', 'stim2_ons_sl', 'stim2_ons_ms', ...
     'choice2_ons_sl', 'choice2_ons_ms', 'rew_ons_sl', 'rew_ons_ms', ...
     'name', 'payoff', 'contingency', 'attack', 'warnings', 'swap_hist', ...
-    'keycode1', 'keycode2')
+    'keycode1', 'keycode2', 'jitter_time')
+
+%Close all pointers
+fclose all;

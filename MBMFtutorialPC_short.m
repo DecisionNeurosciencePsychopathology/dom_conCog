@@ -72,7 +72,7 @@ moneytime = 1500;
 if ~self_paced_flag
     truechoicetime = 3000;
 else
-    truechoicetime = inf;
+    truechoicetime = 5000;
 end
 isitime = 1000;
 ititime = 1000;
@@ -597,7 +597,7 @@ for trial = 1:shark_trials %Number of shark trials
         %elseif trial == totaltrials*(.5)+1
     elseif ismember(trial,10)
         DrawFormattedText(w, 'Shark Is Gone','center', 100);
-        Screen('DrawTexture',w,safe_scrn, [],[])
+        Screen('DrawTexture',w,safe_scrn, [],[]);
         %Add in clear blue stary sky!
         
         Screen('Flip',w);

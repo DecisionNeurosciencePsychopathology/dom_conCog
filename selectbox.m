@@ -34,6 +34,9 @@ while KbCheck && (slicewrapper < unt);
 end
   
 while pos == 0 && (slicewrapper < unt)
+    %FOR DEBUG ONLY
+%     pos=1;
+%     continue
 	[key, buttontime, keycode] = KbCheck;
     if (key && (length(find(keycode)) == 1))
         if find(choices == find(keycode))

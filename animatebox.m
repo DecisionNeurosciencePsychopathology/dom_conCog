@@ -80,7 +80,7 @@ while slicewrapper < unt
         break
     end
 end
-waitwrapper(unt)
+waitwrapper(unt);
 %for i = slicewrapper:unt
 %  drawpict(mod(i,2) + 2); % alternate frames
 %  waitwrapper(i);
