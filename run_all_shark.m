@@ -21,7 +21,7 @@ gee.trial(position:position+ntrials-1,1) = 1:ntrials;
 position = position + ntrials;
 end
 geeTable = struct2table(gee);
-writetable(geeTable,'shark_gee_n=8_032416');
+writetable(geeTable,'shark_gee_n=9_050316');
 
 %[win common stay, win rare stay] vs [loss common stay, loss rare stay]
 [h_stay,p_stay,ci_stay,stats_stay] = ttest([s.win_common_stay_pct; s.win_rare_stay_pct]',[s.loss_common_stay_pct; s.loss_rare_stay_pct]');

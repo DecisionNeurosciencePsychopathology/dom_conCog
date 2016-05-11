@@ -1,8 +1,9 @@
 function b = sharkmakeregressor(id)
 % Jon Wilson & Alex Dombrovski
 % 2015-10: Script creation
+% id must be a string for now
 
-%Take care of file creations
+%Take care of file creations - the slashes are needed (for now)
 data_dir_str= ['C:\kod\dom_conCog\shark_data'];
 filename = sprintf('C:\\kod\\dom_conCog\\regs\\%s\\shark%s.mat', id,id);
 data_dump_str=sprintf('C:\\kod\\dom_conCog\\regs\\%s\\',id);
@@ -104,7 +105,12 @@ b.rts2= rts2;
 b.rew_onset = rew_ons_ms;
 
 %Via 3d_info
-scan_tr = .75;
+old_tr_subjects = {'0495','JANO','MARLE','TCAO'};
+if any(strcmpi(id, old_tr_subjects))
+    scan_tr = .75;
+else
+    scan_tr = .6; %Correct TR moving forward 
+end
 
 tr = 0.1; %10Hz
 
@@ -117,6 +123,12 @@ frequency_scale_hz = 10;
 % Hz (defined by 'frequency_scale' above. the resulting
 % output will be in the scale of X Hz.
 bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
+
+%%%%%%NOTE
+%We need to make some external function to automatically grab the number of
+%volumes hard coding will not cut it any longer...
+
+
 
 %Currently only 1 mega block
 %x = {1:exchangeNum; exchangeNum+1:2*exchangeNum; 2*exchangeNum+1:3*exchangeNum; 3*exchangeNum+1:4*exchangeNum;};
@@ -131,15 +143,12 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
         block_length = 1712;
     elseif strcmp('JANO',id)
         block_length = 1724;
-    else %This is for 0495
+    elseif strcmp('0495',id) %This is for 0495
          block_length = [866, 873];
          b.num_blocks = 2; %This will change depending on who we are processing!!!
-%         if block_n ==1
-%             block_length(block_n) = 866;
-%             
-%         else
-%             block_length(block_n) = 873;
-%         end
+    else
+        block_length = [1145, 1189];
+        b.num_blocks = 2; %This will change depending on who we are processing!!!
     end
     
 %b.num_blocks = 2; %This will change depending on who we are processing!!!
@@ -150,7 +159,12 @@ for block_n=1:b.num_blocks
     %epoch_window defines the time interval from first stimulus onset to last
     %feedback offset, for each block, in this case we have one mega block...
     %Currently this is to the end of the second jitter screen
-    epoch_window = b.stim1_onset(1):bin_size:(b.rew_onset(end)+moneytime+jittertime);
+    
+    
+    %NOTE THIS NEEDS TO CHANGE I BELIEVE. b.rew_onset will refer to the
+    %very last rew onset not the last rew onset of that block...
+    epoch_win
+    dow = b.stim1_onset(1):bin_size:(b.rew_onset(end)+moneytime+jittertime);
     %epoch_window = b.stim1_onset(1):bin_size:b.stim1_onset(1)+scan_tr*block_length*1000;
     
     % shark trials -- the entire trial length
@@ -320,7 +334,6 @@ for block_n=1:b.num_blocks
     tmp_reg.(['hrfreg' num2str(block_n)]).to_censor  = floor(tmp(1:block_length(block_n))); %This minus 1 was causing the censore file to lose a volume for each block
     
     
-    %End of block loop if we had one
 end
 
 b.tmp_regs = tmp_reg;
