@@ -1,27 +1,28 @@
+clear;
+clc;
 stay_data=[];
-stay_shark_data=[];
-blk_data = [];
 file_list=glob('C:\kod\dom_conCog\shark_data\*onsets.mat');
 for i = 1:length(file_list)
-    [s(i) temp_stay_data temp_stay_shark_data temp_blk_data,trial_data(i)]=run_shark_analysis_using_onsets(file_list{i},i);
+    [s(i),temp_stay_data, td]=run_shark_analysis_using_onsets(file_list{i},i);
+    trial_data(i) = orderfields(td); %You need to remove the fieldnames that JANO and MARLE dont have...
     stay_data = [stay_data temp_stay_data];
-    stay_shark_data = [stay_shark_data temp_stay_shark_data]; % each subject is a column
-    blk_data(i,:,:) = temp_blk_data;
+%     stay_shark_data = [stay_shark_data temp_stay_shark_data]; % each subject is a column
+%     blk_data(i,:,:) = temp_blk_data;
 end
 
 position = 1;
 for sub = 1:length(trial_data)
-ntrials = length(trial_data(sub).win);
-gee.subject(position:position+ntrials-1,1) = sub;
+ntrials = length(trial_data(sub).money);
+gee.subject(position:position+ntrials-1,1) = repmat({trial_data(sub).name},ntrials,1);
 gee.stay(position:position+ntrials-1,1) = [trial_data(sub).stay];
-gee.win(position:position+ntrials-1,1) = [trial_data(sub).win];
+gee.win(position:position+ntrials-1,1) = [trial_data(sub).money];
 gee.common(position:position+ntrials-1,1) = [trial_data(sub).common];
 gee.shark(position:position+ntrials-1,1) = [trial_data(sub).shark];
 gee.trial(position:position+ntrials-1,1) = 1:ntrials;
 position = position + ntrials;
 end
 geeTable = struct2table(gee);
-writetable(geeTable,'shark_gee_n=9_050316');
+%writetable(geeTable,'shark_gee_n=9_050316');
 
 %[win common stay, win rare stay] vs [loss common stay, loss rare stay]
 [h_stay,p_stay,ci_stay,stats_stay] = ttest([s.win_common_stay_pct; s.win_rare_stay_pct]',[s.loss_common_stay_pct; s.loss_rare_stay_pct]');

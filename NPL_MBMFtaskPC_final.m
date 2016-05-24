@@ -22,7 +22,7 @@ tutorial_flag = 0;
 keyback = KbName('z');
 
 %JUST DEBUGGING ONLY
-%inmri = 1;
+inmri = 1;
 
 %Screen Resoultion
 % screenResolution=[1920 1200]; %Jon's PC

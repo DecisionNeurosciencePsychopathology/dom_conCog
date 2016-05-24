@@ -38,6 +38,11 @@ ititime = 1000;
 choicetime = 3000;
 jittertime=1500;
 start = 0;
+sharktime = 2000; %in ms
+
+%Store id -- might need to change this to a double in the future
+%b.id = id;
+
 %Find trials where there was no response
 %Will we need one for both levels?
 b.missed = (rts1==0 & rts2==0);
@@ -136,7 +141,7 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
     %Since we didn't have a specific time to run the scan till, we had to tell
     %the tech to stop the scan, as with TCAO, as a result the first 3 pilots
     %for this task had different scan block lengths...
-    b.num_blocks = 1; %This will change depending on who we are processing!!!
+    b.total_blocks = 1; %This will change depending on who we are processing!!!
     if strcmp('TCAO',id)
         block_length = 1651; %One mega block
     elseif strcmp('MARLE',id)
@@ -144,16 +149,33 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
     elseif strcmp('JANO',id)
         block_length = 1724;
     elseif strcmp('0495',id) %This is for 0495
-         block_length = [866, 873];
-         b.num_blocks = 2; %This will change depending on who we are processing!!!
-    else
-        block_length = [1145, 1189];
-        b.num_blocks = 2; %This will change depending on who we are processing!!!
+        block_length = [866, 873];
+        b.total_blocks = 2; %This will change depending on who we are processing!!!
+    else %Set up same thing you did for clock here...
+        %block_length = [1145, 1189];
+        b.total_blocks = 2; %Going forward this is the number of correct blocks
+        
+        %If we didn't already grab the subjects volume run length do it now
+        file_str = sprintf('regs/%s/%s_block_lengh.mat',id,id);
+        if ~exist(file_str,'file')
+            thorn_str={sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark1/',id),...
+                sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark2/',id)};
+            b=findBlockLength(b,thorn_str);
+            block_length = b.block_length; %This is subject specific create that function to grab this from 3dinfo
+            save(file_str,'block_length')
+        else
+            load(file_str)
+        end
+        
+        
     end
     
-%b.num_blocks = 2; %This will change depending on who we are processing!!!
 
-for block_n=1:b.num_blocks
+%Create trial index var
+b.trials_per_block=trials/b.total_blocks;
+b.trial_index = 1:b.trials_per_block:b.total_blocks*b.trials_per_block;
+
+for block_n=1:b.total_blocks
     
     
     %epoch_window defines the time interval from first stimulus onset to last
@@ -162,10 +184,26 @@ for block_n=1:b.num_blocks
     
     
     %NOTE THIS NEEDS TO CHANGE I BELIEVE. b.rew_onset will refer to the
-    %very last rew onset not the last rew onset of that block...
-    epoch_win
-    dow = b.stim1_onset(1):bin_size:(b.rew_onset(end)+moneytime+jittertime);
+    %very last rew onset not the last rew onset of that block... both all
+    %onset times need to reflet the current block
+    trial_index_1 = b.trial_index(block_n);
+    trial_index_2 = trial_index_1 + b.trials_per_block-1;
+    %epoch_window = b.stim1_onset(1):bin_size:(b.rew_onset(end)+moneytime+jittertime);
     %epoch_window = b.stim1_onset(1):bin_size:b.stim1_onset(1)+scan_tr*block_length*1000;
+    epoch_window = b.stim1_onset(trial_index_1):bin_size:(b.rew_onset(trial_index_2)+moneytime+jittertime);
+    
+    %Just created shark epoch  (if needed) and censor these times from the
+    %main epoch window
+    if block_n==1
+        %Shark attack after reward and iti fixation cross
+        attack_start = [b.rew_onset(attack)+moneytime+jittertime;...
+            b.rew_onset(attack+1)+moneytime+jittertime];
+        shark_epoch_attack_trial = attack_start(1):bin_size:attack_start(1)+sharktime;
+        shark_epoch_next_trial = attack_start(2):bin_size:attack_start(2)+sharktime;
+        shark_epoch = [shark_epoch_attack_trial shark_epoch_next_trial];
+    else
+        shark_epoch = 0;
+    end
     
     % shark trials -- the entire trial length
     event_beg = b.stim1_onset;
@@ -184,8 +222,8 @@ for block_n=1:b.num_blocks
     [b.stim_times.switch_fsl,b.stim_times.switch_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'switch_Times',b.switch_trials,1);
     [b.stim_times.stay_fsl,b.stim_times.stay_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'stay_Times',b.stay_trials,1);
     
-    tmp_reg.(['regressors' num2str(block_n)]).decision_level_1 = ...
-        createSimpleRegressor(event_beg,event_end,epoch_window);
+%     tmp_reg.(['regressors' num2str(block_n)]).decision_level_1 = ...
+%         createSimpleRegressor(event_beg,event_end,epoch_window);
     
     % for decision screens, RTs, from partnerchoice onset to response
     event_beg = b.stim2_onset;
@@ -193,8 +231,8 @@ for block_n=1:b.num_blocks
     [b.stim_times.dec2_fsl,b.stim_times.dec2_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'decision_level_2_Times',1,1);
     [b.stim_times.left_fsl,b.stim_times.left_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'left_index',b.left_index_level_2,1);
     [b.stim_times.right_fsl,b.stim_times.right_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'right_index',b.right_index_level_2,1);
-    tmp_reg.(['regressors' num2str(block_n)]).decision_level_2 = ...
-        createSimpleRegressor(event_beg,event_end,epoch_window);
+%     tmp_reg.(['regressors' num2str(block_n)]).decision_level_2 = ...
+%         createSimpleRegressor(event_beg,event_end,epoch_window);
     
     
     %Very basic regressor, start from onset of stimulus to offset of
@@ -203,8 +241,8 @@ for block_n=1:b.num_blocks
     event_end = b.rew_onset+moneytime;
     %write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'trial_Times');
     [b.stim_times.trial_fsl,b.stim_times.trial_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'trial_Times',1,1);
-    tmp_reg.(['regressors' num2str(block_n)]).trial = ...
-        createSimpleRegressor(event_beg,event_end,epoch_window);
+%     tmp_reg.(['regressors' num2str(block_n)]).trial = ...
+%         createSimpleRegressor(event_beg,event_end,epoch_window);
     
     
     % for feedback, from feedback onset to feedback offset
@@ -214,8 +252,8 @@ for block_n=1:b.num_blocks
     [b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'win_loss_Times',b.win_loss); %wins are 1 loss is -1
     [b.stim_times.win_fsl,b.stim_times.win_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'win_Times',b.win_trials,1); %Only win trials
     [b.stim_times.loss_fsl,b.stim_times.loss_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'loss_Times',b.loss_trials,1); %Only loss trials
-    tmp_reg.(['regressors' num2str(block_n)]).feedback = ...
-        createSimpleRegressor(event_beg,event_end,epoch_window);
+%     tmp_reg.(['regressors' num2str(block_n)]).feedback = ...
+%         createSimpleRegressor(event_beg,event_end,epoch_window);
     
     
     %%%% DMUBLOCK %%%%
@@ -233,6 +271,9 @@ for block_n=1:b.num_blocks
     [b.stim_times.dec1_fsl,b.stim_times.dec1_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'decision_level_1_Times',1);
     %Switch stay
     [b.stim_times.switchStay_fsl,b.stim_times.switchStay_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'switch_stay_Times',b.switch_stay); %switch 1 stay -1
+    %Missed regressor
+    [b.stim_times.dec1_fsl,b.stim_times.dec1_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_beg+1000,'missed',b.missed);
+    
     
     %Motor level 1
     event_beg = b.stim1_onset;
@@ -275,20 +316,41 @@ for block_n=1:b.num_blocks
     
     
     
-    
-    
     %%%%%%%%%%%%%%%%%%
     
     %create to_censor vector
     %% AD: I haven't checked this
-    if sum(b.missed) == 0
-        tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size( tmp_reg.(['regressors' num2str(block_n)]).decision_level_1));
-    else
-        event_beg = b.stim1_onset; event_end =b.rew_onset+(moneytime+jittertime);
-        tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
-            createSimpleRegressor(event_beg, event_end, epoch_window, b.missed);
-        tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
-    end
+%     if sum(b.missed) == 0
+%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size( tmp_reg.(['regressors' num2str(block_n)]).decision_level_1));
+%     else
+%         event_beg = b.stim1_onset; event_end =b.rew_onset+(moneytime+jittertime);
+%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
+%             createSimpleRegressor(event_beg, event_end, epoch_window, b.missed);
+%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
+%     end
+
+%Censor out any "bad trials" and the shark of the attack trial and next
+%trial
+event_beg = b.stim1_onset(trial_index_1:trial_index_2); event_end =b.rew_onset(trial_index_1:trial_index_2)+(moneytime+jittertime);
+%Add in a bit of code that will just add some time to stim1_onset
+%for the missed trials in event end. Then we should be good until we talk
+%it over with Alex...
+missed_time = 6000; %They have 5 seconds to respond plus a ~1sec x animation? No fixation crosses after missed trial! <- Alex thoughts?
+event_end(b.missed(trial_index_1:trial_index_2)) = b.stim1_onset(b.missed(trial_index_1:trial_index_2)) + missed_time;
+
+%This was the version that would censor the missed trials and the shark
+% tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
+%     createSimpleRegressor(event_beg, event_end, epoch_window,shark_epoch,b.missed(trial_index_1:trial_index_2));
+% tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
+
+
+%Only censor shark
+tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
+    createSimpleRegressor(event_beg, event_end, epoch_window,shark_epoch,zeros(1,length(b.missed(trial_index_1:trial_index_2))));
+tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
+
+
+    
     % % HRF-convolve all the event regressors
     % hrfregs = fieldnames(rmfield(tmp_reg.regressors1,{'to_censor','missed_RT'}));
     %% AD: I would say we don't need to analyze missed RTs
@@ -350,7 +412,7 @@ fnm = fieldnames(tmp_reg.hrfreg1)';
 
 %Added switch case for subjects with irregular trials
 ct=1:length(fnm);
-switch b.num_blocks
+switch b.total_blocks
     case 1
         for ct=1:length(fnm)
             b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct})];
@@ -414,7 +476,7 @@ return
 
 
 %%%%%%%%%%%% Regressor functions %%%%%%%%%%%%%
-function foo = createSimpleRegressor(event_begin,event_end,epoch_window,conditional_trials)
+function foo = createSimpleRegressor(event_begin,event_end,epoch_window,shark_epoch,conditional_trials)
 
 % TODO: incorporate concatenation of different blocks in this function (maybe?)
 
@@ -445,12 +507,17 @@ epoch = arrayfun(@(a,b) a:b,event_begin,event_end,'UniformOutput',false);
 
 foo = zeros(size(epoch_window));
 
+%I think this will work, first censor out any missed trials, then censor
+%out the shark times if they appeared in the block
 for n = 1:numel(epoch)
     if(conditional_trials(n))
         foo = logical(foo + histc(epoch{n},epoch_window));
     end
 end
 
+if numel(shark_epoch>1)
+    foo = logical(foo + histc(shark_epoch,epoch_window));
+end
 
 % createAndCatRegs(event_begin,event_end,epoch_window);
 
@@ -501,7 +568,7 @@ x(:,3) = ones(length(x),1).*censor';
 
 %write the -stim_times_FSL
 if ~noFSL
-    if b.num_blocks==1
+    if b.total_blocks==1
         %Save to regs folder
         dlmwrite([file_loc fname '.dat'],x,'delimiter','\t','precision','%.6f')
     else
@@ -526,7 +593,7 @@ function c = asterisk(x,b)
 c=[];
 ast = {'*', '*', '*'};
 b.trial_index = [1 51]; %Hard code bad but just for now...
-b.trials_per_block = length(b.stim1_onset)/b.num_blocks;
+b.trials_per_block = length(b.stim1_onset)/b.total_blocks;
 for i = 1:length(b.trial_index)
     %Set up trial ranges
     trial_index_1 = b.trial_index(i);
