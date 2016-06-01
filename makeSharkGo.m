@@ -17,21 +17,21 @@ while ismember(contingency, [1 2])==0
     end
 end
 
-self_paced_flag =nan;
-while ismember(self_paced_flag, [0 1])==0 
-    self_paced_flag = input('Is this self paced (1) or not (0): ');
-    if isempty(self_paced_flag)
-        self_paced_flag =nan;
-    end
-end
+self_paced_flag =1;
+% while ismember(self_paced_flag, [0 1])==0 
+%     self_paced_flag = input('Is this self paced (1) or not (0): ');
+%     if isempty(self_paced_flag)
+%         self_paced_flag =nan;
+%     end
+% end
 
-inmri =99;
-while ismember(inmri, [1 0])==0
-    inmri = input('Is this and fMRI scan (yes=1 or no=0): ');
-    if isempty(inmri)
-        inmri =99;
-    end
-end
+inmri =1;
+% while ismember(inmri, [1 0])==0
+%     inmri = input('Is this and fMRI scan (yes=1 or no=0): ');
+%     if isempty(inmri)
+%         inmri =99;
+%     end
+% end
 
 total_before_scanner_flag =99;
 while ismember(total_before_scanner_flag, 1)==0

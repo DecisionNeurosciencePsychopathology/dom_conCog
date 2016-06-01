@@ -22,7 +22,7 @@ tutorial_flag = 0;
 keyback = KbName('z');
 
 %JUST DEBUGGING ONLY
-inmri = 1;
+%inmri = 1;
 
 %Screen Resoultion
 % screenResolution=[1920 1200]; %Jon's PC
@@ -144,6 +144,9 @@ else
     keyleft = KbName('1!');%[u]
     keyright = KbName('0)');%[i]
 end
+
+%Restrict only these keys in scanner
+RestrictKeysForKbCheck([spaceKey,escKey,caretKey,equalsKey,keyleft,keyright]);
 
 
 % enter subject details Shouldn't be necessary now
