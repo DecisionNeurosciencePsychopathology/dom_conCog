@@ -25,23 +25,11 @@ keyback = KbName('z');
 %inmri = 1;
 
 %Screen Resoultion
-% screenResolution=[1920 1200]; %Jon's PC
-%screenResolution=[1920 1080]; %SPECC's PC
-
-% Open a new window.
-% [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
-% FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
-% slack = FlipInterval/2; %used for minimizing accumulation of lags due to vertical refresh
-
 %If window doesn't exist already create it
 if (~exist('w', 'var'))
-%     Pix_SS = get(0,'screensize');
-%     screenResolution=Pix_SS(3:end);
     screenResolution=[1024 768]; %Scanner res
     [ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 0 0 0], [0 0 screenResolution] );
-    %[ w, windowRect ] = Screen('OpenWindow', max(Screen('Screens')),[ 204 204 204], [0 0 screenResolution] );
 end
-%totaltrials=200;    %total number of trials in the task
 totaltrials=100;    %total number of trials in the task
 transprob =.8;    % probability of 'correct' transition
 swap_prob = .4;     %Probability that the rockets switch position
@@ -388,11 +376,22 @@ HideCursor;
 
 Screen('BlendFunction', w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); %necessary for transparency
 
-% make logfile to be filled in in real time
-logfile = fopen([name '_' date '.txt'], 'w');
-fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tswap_hist\tkeycode1\tjitter1\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tkeycode2\tjitter2\tSC_ID\tcontingency\twon\n');
-%oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
-
+%Only do this is it exists
+if exist(['tmp_' name '.mat'],'file')
+    fname = ls([name '*.txt']);
+    logfile = fopen(fname, 'a');
+    load(['tmp_' name]);
+    tstart=trial;
+    DrawFormattedText(w,['Welcome back. You''ll start on trial ' num2str(trial)],'center', round(ytext),[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+else
+    % make logfile to be filled in in real time
+    logfile = fopen([name '_' date '.txt'], 'w');
+    fprintf(logfile,'\ntrial\tchoice1\trts1\tstim1ons_sl\tstim1ons_ms\tchoice1ons_sl\tchoice1ons_ms\tswap_hist\tkeycode1\tjitter1\tstate\tchoice2\trts2\tstim2ons_sl\tstim2ons_ms\tchoice2ons_sl\tchoice2ons_ms\tkeycode2\tjitter2\tSC_ID\tcontingency\twon\n');
+    %oldfprintf(logfile,'\ntrial choice1   rts1   stim1ons_sl   stim1ons_ms   choice1ons_sl   choice1ons_ms   state   choice2   rts2   stim2ons_sl   stim2ons_ms   choice2ons_sl   choice2ons_ms   won\n\n');
+    tstart=1;
+end
 %Add in optional instructions here...just for fmri version!?
 if inmri
     DrawFormattedText(w,'Let''s Recap.','center', round(ytext),[],wrap);
@@ -461,216 +460,234 @@ end
 
 
 
-
-
-%% BEGIN TASK AFTER SYNC OBTAINED FROM SCANNER
-if inmri
+try
     
-    [slack,scannerStart]=startSync(w);
-    %     FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
-    %     slack = FlipInterval/2;
-    %
-    %
-    %     [scannerStart, priorFlip] = scannerPulseSync;
-    %
-    %     % Grab the time right after the scanner syncs
-    %     starttime = GetSecs*1000;
-    %
-    %     fprintf('pulse flip: %.5f\n', priorFlip);
-    
-    %initial fixation of 3 seconds to allow for steady state magnetization.
-    %count down from 3 to 1, then a 1-second blank screen.
-    %priorFlip = fixation(preStartWait - 4.0, 1, scannerStart);
-    
-    %fprintf('fix flip: %.5f\n', priorFlip);
-    
-    for cdown = 1:3
-        DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
-        priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
-        %fprintf('cdown: %d, fix flip: %.5f\n', cdown, priorFlip);
-        %WaitSecs(1.0);
-    end
-    
-else
-    
-    %set reference time right at the start of the trials
-    starttime = GetSecs*1000;
-end
-
-
-% % % % main experimental loop % % % %
-for trial = 1:totaltrials
-    %display some stats
-    fprintf('Trial: %d\n',trial)
-    fprintf('The jitter time for level 1 is: %d\n',jitter_time(trial,1))
-    fprintf('The jitter time for level 2 is: %d\n',jitter_time(trial,2))
-    
-    % Initally flip the screen
-    Screen('Flip',w);
-    
-    
-    %% After shark attack
-    if ismember(trial, attack+1)
-        DrawFormattedText(w,'You lose $25!','center','center',[255, 0, 0, 255],wrap);
-        Screen('Flip',w);
-        WaitSecs((ititime*3)/1000) %We can change the wait time to whatever...
-    end
-    
-    %% Break trials...NO BREAKS FOR YOU!?
-    if find(trial == b+1) > 0
-        %Allow for a break at b, if in MRI, sync the scanner pulse again.
-        %Press the space bar to continue...
-        while(1)
-            Screen('Flip',w);
-            DrawFormattedText(w, 'End of block','center',round(ytext),[],wrap);
-            [ keyIsDown, seconds, keyCode ] = KbCheck;
-            if(keyIsDown && (keyCode(spaceKey))), break; end
+    %% BEGIN TASK AFTER SYNC OBTAINED FROM SCANNER
+    if inmri
+        
+        [slack,scannerStart]=startSync(w);
+        %     FlipInterval = Screen('GetFlipInterval',w); %monitor refresh rate.
+        %     slack = FlipInterval/2;
+        %
+        %
+        %     [scannerStart, priorFlip] = scannerPulseSync;
+        %
+        %     % Grab the time right after the scanner syncs
+        %     starttime = GetSecs*1000;
+        %
+        %     fprintf('pulse flip: %.5f\n', priorFlip);
+        
+        %initial fixation of 3 seconds to allow for steady state magnetization.
+        %count down from 3 to 1, then a 1-second blank screen.
+        %priorFlip = fixation(preStartWait - 4.0, 1, scannerStart);
+        
+        %fprintf('fix flip: %.5f\n', priorFlip);
+        
+        for cdown = 1:3
+            DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
+            priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
+            %fprintf('cdown: %d, fix flip: %.5f\n', cdown, priorFlip);
+            %WaitSecs(1.0);
         end
+        
+    else
+        
+        %set reference time right at the start of the trials
+        starttime = GetSecs*1000;
+    end
+    
+    
+    % % % % main experimental loop % % % %
+    for trial = tstart:totaltrials
+        %display some stats
+        fprintf('Trial: %d\n',trial)
+        fprintf('The jitter time for level 1 is: %d\n',jitter_time(trial,1))
+        fprintf('The jitter time for level 2 is: %d\n',jitter_time(trial,2))
+        
+        % Initally flip the screen
         Screen('Flip',w);
-        DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue\n\nwhen you are ready.'],'center',round(ytext),[],wrap);
-        KbWait([],2);
-        Screen('Flip',w);
-        WaitSecs((ititime)/1000)
-        if inmri
-            DrawFormattedText(w,'Waiting for scanner pulse...','center', round(ytext),[],wrap);
+        
+        
+        %% After shark attack
+        if ismember(trial, attack+1)
+            DrawFormattedText(w,'You lose $25!','center','center',[255, 0, 0, 255],wrap);
             Screen('Flip',w);
-            %             KbWait([],2);
-            [slack,scannerStart]=startSync(w);
-            for cdown = 1:3
-                DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
-                priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
+            WaitSecs((ititime*3)/1000) %We can change the wait time to whatever...
+        end
+        
+        %% Break trials...NO BREAKS FOR YOU!?
+        if find(trial == b+1) > 0
+            %Allow for a break at b, if in MRI, sync the scanner pulse again.
+            %Press the space bar to continue...
+            while(1)
+                Screen('Flip',w);
+                DrawFormattedText(w, 'End of block','center',round(ytext),[],wrap);
+                [ keyIsDown, seconds, keyCode ] = KbCheck;
+                if(keyIsDown && (keyCode(spaceKey))), break; end
             end
-        else
-            starttime = GetSecs*1000;
+            Screen('Flip',w);
+            DrawFormattedText(w, ['Take a break!' '\n\n\n' 'Press any key to continue\n\nwhen you are ready.'],'center',round(ytext),[],wrap);
+            KbWait([],2);
+            Screen('Flip',w);
+            WaitSecs((ititime)/1000)
+            if inmri
+                DrawFormattedText(w,'Waiting for scanner pulse...','center', round(ytext),[],wrap);
+                Screen('Flip',w);
+                %             KbWait([],2);
+                [slack,scannerStart]=startSync(w);
+                for cdown = 1:3
+                    DrawFormattedText(w, ['Beginning in\n\n' num2str(4.0 - cdown)],'center','center',white);
+                    priorFlip = Screen('Flip', w, scannerStart + 4.0 + (cdown - 1.0) - slack);
+                end
+            else
+                starttime = GetSecs*1000;
+            end
+            
         end
+        
+        %% Warning screen for incoming shark attack!
+        if ismember(trial,warnings)
+            warning_fin(w,xcenter,ycenter,shark_fin,shark_fin_rev,galaxy_img)
+            WaitSecs((ititime*2)/1000) %We can change the wait time to whatever...
+            %elseif ismember(trial,warnings + totaltrials/4)
+        elseif ismember(trial,safe_blocks)
+            DrawFormattedText(w, 'Shark Is Gone','center', 100);
+            Screen('DrawTexture',w,safe_scrn, [],[])
+            Screen('Flip',w);
+            WaitSecs((ititime*2)/1000) %We can change the wait time to whatever...
+        end
+        
+        %% Check if shark attacak trial
+        %this will take care of when to remind subject it is a shark attack
+        %block
+        if any(find(trial==attack_block))
+            shark_attack_block=1;
+        else
+            shark_attack_block=0;
+        end
+        
+        
+        %% first level
+        level = 0;
+        %Will it be a swap trial
+        swap = rand<swap_prob;
+        planetpic = earth; %state 1 planet is earth
+        [choice1(trial),rts1(trial),stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),keycode1(trial),~,~, lastChoice] = ...
+            halftrial(planetpic, s(1,:), pos1(trial),w,slicewait, level,[],swap);
+        
+        %Need swap history to determine right left choices
+        swap_hist(trial) = swap;
+        
+        % record first choice in log
+        fprintf(logfile,'%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%d\t%f',trial,choice1(trial),rts1(trial),...
+            stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),swap_hist(trial),keycode1(trial),jitter_time(trial,1));
+        %fprintf(logfile,'\n%d %d %f %f %f %f %f',trial,choice1(trial),rts1(trial),...
+        %   stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial))
+        
+        if ~choice1(trial) % spoiled
+            %Take care of log file
+            fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
+                stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
+                keycode2(trial),jitter_time(trial,2),name,contingency);
+            fprintf(logfile,'\t%d\n',money(trial));
+            %we pick up a half-trial of extra time here; not sure what to do about this
+            slicewait = slicewait + choicetime + isitime + moneytime + ititime + jitter_time(trial,1);
+            if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
+            continue;
+        end
+        
+        
+        fprintf('After first choice!\n')
+        
+        %determine where we transition
+        state(trial) = 2 + xor((rand > transprob),(choice1(trial)-1));
+        switch (state(trial)) %set planet pic depending on state
+            case 2
+                planetpic = planetR;
+            case 3
+                planetpic = planetP;
+        end
+        
+        %Jitter 1--ISI
+        fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time(trial,1))
+        
+        %% second level
+        level=1;
+        [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),keycode2(trial),stimleft,stimright] = ...
+            halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice);
+        
+        % record second choice in log
+        fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
+            stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
+            keycode2(trial),jitter_time(trial,2),name,contingency);
+        %  fprintf(logfile,'\t%d %d %f %f %f %f %f',state(trial),choice2(trial),rts2(trial),...
+        %      stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial))
+        
+        
+        if ~choice2(trial) % spoiled
+            %Take care of log
+            fprintf(logfile,'\t%d\n',money(trial));
+            slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter_time(trial,2);
+            fprintf(logfile,' ');
+            if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
+            continue;
+        end
+        
+        fprintf('After second choice!\n')
+        
+        %% outcome
+        money(trial) = rand < payoff(state(trial)-1,choice2(trial),trial);
+        right_before_outcome(trial)=(GetSecs*1000 - starttime);
+        [rew_ons_sl(trial),rew_ons_ms(trial)] = drawoutcome(money(trial),w,keycode2(trial),stimleft,stimright);
+        %right_after_outcome(trial)=(GetSecs*1000 - starttime);
+        slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter_time(trial,2);
+        
+        fprintf(logfile,'\t%d\n',money(trial));
+        
+        %Jitter 2--ITI
+        fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time(trial,2))
+        right_after_sec_jitter(trial)=(GetSecs*1000 - starttime);
+        
+        %% Shark attack!!!
+        if ismember(trial,attack); shark_attack(w,cosmic_shark); end
         
     end
     
-    %% Warning screen for incoming shark attack!
-    if ismember(trial,warnings)
-        warning_fin(w,xcenter,ycenter,shark_fin,shark_fin_rev,galaxy_img)
-        WaitSecs((ititime*2)/1000) %We can change the wait time to whatever...
-        %elseif ismember(trial,warnings + totaltrials/4)
-    elseif ismember(trial,safe_blocks)
-        DrawFormattedText(w, 'Shark Is Gone','center', 100);
-        Screen('DrawTexture',w,safe_scrn, [],[])
-        Screen('Flip',w);
-        WaitSecs((ititime*2)/1000) %We can change the wait time to whatever...
-    end
     
-    %% Check if shark attacak trial
-    %this will take care of when to remind subject it is a shark attack
-    %block
-    if any(find(trial==attack_block))
-        shark_attack_block=1;
-    else
-        shark_attack_block=0;
-    end
+    % figure out what they won
+    totalwon = sum(money)*.25 + pre_total - 25;
     
     
-    %% first level
-    level = 0;
-    %Will it be a swap trial
-    swap = rand<swap_prob;
-    planetpic = earth; %state 1 planet is earth
-    [choice1(trial),rts1(trial),stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),keycode1(trial),~,~, lastChoice] = ...
-        halftrial(planetpic, s(1,:), pos1(trial),w,slicewait, level,[],swap);
-    
-    %Need swap history to determine right left choices
-    swap_hist(trial) = swap;
-    
-    % record first choice in log
-    fprintf(logfile,'%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%d\t%f',trial,choice1(trial),rts1(trial),...
-        stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial),swap_hist(trial),keycode1(trial),jitter_time(trial,1));
-    %fprintf(logfile,'\n%d %d %f %f %f %f %f',trial,choice1(trial),rts1(trial),...
-    %   stim1_ons_sl(trial),stim1_ons_ms(trial),choice1_ons_sl(trial),choice1_ons_ms(trial))
-    
-    if ~choice1(trial) % spoiled
-        %Take care of log file
-        fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
-        stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
-        keycode2(trial),jitter_time(trial,2),name,contingency);
-        fprintf(logfile,'\t%d\n',money(trial));
-        %we pick up a half-trial of extra time here; not sure what to do about this
-        slicewait = slicewait + choicetime + isitime + moneytime + ititime + jitter_time(trial,1);
-        if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
-        continue;
-    end
+    %Just to be safe save the entire workspace
+    save(sprintf('%s_workspace_ouput',name));
     
     
-    fprintf('After first choice!\n')
+    % Display last bit of text before exiting
+    DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won \n $ ',num2str(totalwon),'!'],'center','center',[],wrap);
+    Screen('Flip',w);
+    KbWait([],2);
+    fclose('all');
     
-    %determine where we transition
-    state(trial) = 2 + xor((rand > transprob),(choice1(trial)-1));
-    switch (state(trial)) %set planet pic depending on state
-        case 2
-            planetpic = planetR;
-        case 3
-            planetpic = planetP;
-    end
+    Screen('Close')
+    Screen('CloseAll')
+catch
+    Screen('CloseAll');
+    Priority(0); %reset to normal priority
+    warning('Something went drastically wrong, saving data...');
+    %can't we just save everything so far?
+    ListenChar(0);
+    ShowCursor;
     
-    %Jitter 1--ISI
-    fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time(trial,1))
-    
-    %% second level
-    level=1;
-    [choice2(trial), rts2(trial),stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),keycode2(trial),stimleft,stimright] = ...
-        halftrial(planetpic, s(state(trial),:), pos2(trial),w,[],level, lastChoice);
-    
-    % record second choice in log
-    fprintf(logfile,'\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%d\t%f\t%s\t%d',state(trial),choice2(trial),rts2(trial),...
-        stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial),...
-        keycode2(trial),jitter_time(trial,2),name,contingency);
-    %  fprintf(logfile,'\t%d %d %f %f %f %f %f',state(trial),choice2(trial),rts2(trial),...
-    %      stim2_ons_sl(trial),stim2_ons_ms(trial),choice2_ons_sl(trial),choice2_ons_ms(trial))
-    
-    
-    if ~choice2(trial) % spoiled
-        %Take care of log
-        fprintf(logfile,'\t%d\n',money(trial));
-        slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter_time(trial,2);
-        fprintf(logfile,' ');
-        if ismember(trial,attack); shark_attack(w,cosmic_shark); end %If they don't respond during shark attack
-        continue;
-    end
-    
-    fprintf('After second choice!\n')
-    
-    %% outcome
-    money(trial) = rand < payoff(state(trial)-1,choice2(trial),trial);
-    right_before_outcome(trial)=(GetSecs*1000 - starttime);
-    [rew_ons_sl(trial),rew_ons_ms(trial)] = drawoutcome(money(trial),w,keycode2(trial),stimleft,stimright);
-    %right_after_outcome(trial)=(GetSecs*1000 - starttime);
-    slicewait = slicewait + 2*choicetime + 2*isitime + moneytime + ititime + jitter_time(trial,2);
-    
-    fprintf(logfile,'\t%d\n',money(trial));
-    
-    %Jitter 2--ITI
-    fixation_cross(w,black,allCoords,lineWidthPix,white,xcenter,ycenter,jitter_time(trial,2))
-    right_after_sec_jitter(trial)=(GetSecs*1000 - starttime);
-    
-    %% Shark attack!!!
-    if ismember(trial,attack); shark_attack(w,cosmic_shark); end
-    
+    %save what's important 
+    save(['tmp_' name],'trial','attack', 'jitter_time', 'attack_block', 'b', 'contingency',...
+        'choice1', 'choice2', 'state', 'pos1', 'pos2', 'money', 'rts1', 'rts2', ...
+    'stim1_ons_sl', 'stim1_ons_ms', 'choice1_ons_sl', 'choice1_ons_ms', ...
+    'stim2_ons_sl', 'stim2_ons_ms', 'choice2_ons_sl', 'choice2_ons_ms', ...
+    'rew_ons_sl', 'rew_ons_ms', 'payoff', 'attack', 'warnings', 'swap_hist',...
+    'keycode1', 'keycode2', 'jitter_time', 'pre_total', 'safe_blocks')
+    totalwon=0;
+    error('Kicking out, type dbquit, or hit the Quit Debugging button the Editor toolbar, then rerun script')
 end
-
-
-% figure out what they won
-totalwon = sum(money)*.25 + pre_total - 25;
-
-
-%Just to be safe save the entire workspace
-save(sprintf('%s_workspace_ouput',name));
-
-
-% Display last bit of text before exiting
-DrawFormattedText(w,['This is the end of the task. \n\n' 'You''ve won \n $ ',num2str(totalwon),'!'],'center','center',[],wrap);
-Screen('Flip',w);
-KbWait([],2);
-fclose('all');
-
-Screen('Close')
-Screen('CloseAll')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

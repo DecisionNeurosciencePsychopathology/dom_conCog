@@ -46,7 +46,7 @@ t0 = Screen('Flip',window); %This is the time the subject sees the rockets or al
 
 % get a keystroke
 
-[pos,t1,kickout] = selectbox(ons_ms + choicetime);
+[pos,t1,kickout] = selectbox(ons_ms + choicetime,window);
 
 % timed out
 

@@ -5,6 +5,9 @@
 %
 global inmri
 
+clear
+clc
+
 %SacklerNumber=input('Subject''s Sackler ID? ','s');
 % enter subject details
 name=input('Subject''s ID? (Please enter 5 numbers (ex 09999)):  ', 's');

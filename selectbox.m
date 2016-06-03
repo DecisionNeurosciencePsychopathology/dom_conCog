@@ -1,6 +1,6 @@
-function [pos,buttontime, kickout, keycode] = selectbox(unt)
+function [pos,buttontime, kickout, keycode] = selectbox(unt,w)
 
-global keyleft keyright keyback tutorial_flag
+global keyleft keyright keyback tutorial_flag escKey
 
 if nargin == 0
   unt = Inf;
@@ -45,6 +45,8 @@ while pos == 0 && (slicewrapper < unt)
             pos=1;
             kickout = 1; %By hitting 'z' or keyback you will kickout of the trial loops back ot the instruction screens
             continue
+        elseif find(keycode)==escKey
+            msgAndCloseEverything(w,'ESC key pressed. Quit early')
         end
     end
 end
