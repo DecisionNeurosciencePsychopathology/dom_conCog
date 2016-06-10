@@ -80,3 +80,5 @@ legend('Common', 'Rare')
 
 % first, shark no shark
 [h,p,ci,stats] = ttest([s.win_common_stay_pct]',[s.loss_common_stay_pct]');
+
+%% test model-baseness for all trials
