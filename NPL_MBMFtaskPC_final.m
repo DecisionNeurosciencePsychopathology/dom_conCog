@@ -8,7 +8,7 @@ function [choice1, choice2, state, pos1, pos2, money, totalwon, rts1, rts2, ...
 % sequential choice expt
 % ND, October 2006
 
-clearvars -except name gender dob age w contingency pre_total self_paced_flag
+clearvars -except name gender dob age w contingency pre_total self_paced_flag inmri
 
 KbName('UnifyKeyNames');
 
@@ -22,7 +22,7 @@ tutorial_flag = 0;
 keyback = KbName('z');
 
 %JUST DEBUGGING ONLY
-%inmri = 1;
+inmri = 1;
 
 %Screen Resoultion
 %If window doesn't exist already create it

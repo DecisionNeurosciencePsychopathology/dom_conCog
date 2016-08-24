@@ -24,12 +24,21 @@ common_trials = data.trial(data.common);
 
 data.rare     = (data.choice1==1 & data.state==3) | (data.choice1==2 & data.state==2);
 rare_trials   = data.trial(data.rare);
+ 
 
+%%%%%%Which is correct??
 data.stay     = data.choice1 == [data.choice1(2:end) 0];
 stay_trials   = data.trial(data.stay);
 
-% data.switch   = data.trial(data.choice1 ~= [data.choice1(1) data.choice1(1:end-1)]);
-switch_trials = 1 - stay_trials;
+switch_trials = data.trial(~data.stay);
+
+%This is more like the spontaneous switches like bandit
+% data.stay     = logical([1 data.choice1(2:end)==data.choice1(1:end-1)]);
+% stay_trials   = data.trial(data.stay);
+% 
+% switch_trials = data.trial(~data.stay);
+%%%%%%End of question
+
 
 win_common_trials=win_trials(ismember(win_trials,common_trials));
 loss_common_trials = loss_trials(ismember(loss_trials,common_trials));
@@ -171,7 +180,7 @@ keep_names = {'attack';'choice1';'choice1_ons_ms';'choice1_ons_sl';'choice2';...
     'choice2_ons_ms';'choice2_ons_sl';'contingency';'keycode1';'keycode2';'money';'name';...
     'rew_ons_ms';'rew_ons_sl';'rts1';'rts2';'state';'stim1_ons_ms';...
     'stim1_ons_sl';'stim2_ons_ms';'stim2_ons_sl';'swap_hist';'totalwon';'trial';'warnings';...
-    'shark';'money';'stay';'common';'name';};
+    'shark';'money';'stay';'common';'name';'ac_outcome';'ad_outcome';'bc_outcome';'bd_outcome';};
 for i = 1:length(d_fnames)
     if ~ismember(d_fnames{i},keep_names)
         data=rmfield(data,d_fnames{i});

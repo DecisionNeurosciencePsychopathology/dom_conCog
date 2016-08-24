@@ -3,6 +3,11 @@ function b = sharkmakeregressor(id)
 % 2015-10: Script creation
 % id must be a string for now
 
+%Convert to string if not already
+if ~ischar(id)
+    id = num2str(id);
+end
+
 %Take care of file creations - the slashes are needed (for now)
 data_dir_str= ['C:\kod\dom_conCog\shark_data'];
 filename = sprintf('C:\\kod\\dom_conCog\\regs\\%s\\shark%s.mat', id,id);
