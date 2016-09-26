@@ -3,15 +3,17 @@ function b = sharkmakeregressor(id)
 % 2015-10: Script creation
 % id must be a string for now
 
+org_dir = pwd;
+
 %Convert to string if not already
 if ~ischar(id)
     id = num2str(id);
 end
 
 %Take care of file creations - the slashes are needed (for now)
-data_dir_str= ['C:\kod\dom_conCog\shark_data'];
-filename = sprintf('C:\\kod\\dom_conCog\\regs\\%s\\shark%s.mat', id,id);
-data_dump_str=sprintf('C:\\kod\\dom_conCog\\regs\\%s\\',id);
+data_dir_str= sprintf('subjects\\%s',id);
+filename = sprintf('regs\\%s\\shark%s.mat', id,id);
+data_dump_str=sprintf('regs\\%s\\%s',id,id);
 
 if ~exist(data_dump_str,'file')
     mkdir(data_dump_str)
@@ -21,6 +23,7 @@ end
 
 
 %Grab files and names
+%glob([data_dir_str filesep '.*_onsets.mat'])
 files = dir(data_dir_str);
 %file_names = extractfield(files, 'name')';
 file_names = {files.name};
@@ -160,19 +163,19 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
         %block_length = [1145, 1189];
         b.total_blocks = 2; %Going forward this is the number of correct blocks
         
-        %If we didn't already grab the subjects volume run length do it now
-        file_str = sprintf('regs/%s/%s_block_lengh.mat',id,id);
-        if ~exist(file_str,'file')
-            thorn_str={sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark1/',id),...
-                sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark2/',id)};
-            b=findBlockLength(b,thorn_str);
-            block_length = b.block_length; %This is subject specific create that function to grab this from 3dinfo
-            save(file_str,'block_length')
-        else
-            load(file_str)
-        end
-        
-        
+%         %If we didn't already grab the subjects volume run length do it now
+%         file_str = sprintf('regs/%s/%s_block_lengh.mat',id,id);
+%         if ~exist(file_str,'file')
+%             thorn_str={sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark1/',id),...
+%                 sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark2/',id)};
+%             b=findBlockLength(b,thorn_str);
+%             block_length = b.block_length; %This is subject specific create that function to grab this from 3dinfo
+%             save(file_str,'block_length')
+%         else
+%             load(file_str)
+%         end
+%         
+        load('regs/202200/block_length.mat');
     end
     
 
@@ -462,7 +465,8 @@ gdlmwrite(sprintf('shark%s.regs',id),[ ...
     b.hrf_regs.to_censor' ...                 % 0    trials with responses
     ],'\t');
 
-
+%Go back to original dir -- fix gdlmwrite path to remove this later
+cd(org_dir)
 
 
 %We wanted to use FSL to create the initial regs, this command will make
