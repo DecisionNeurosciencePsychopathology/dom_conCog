@@ -56,8 +56,10 @@ for k=1:length(ids)
     st=table(ID,Task,fMRI_Preprocess_Complete);
     save('completed','st');
     
-    catch
-        disp(sprintf('\nUnable to run ID %d: does not have correct folder or file in Thorndike...\n',ids(k)))
+    catch exception
+        %errorlog
+        errorlog('shark',ids(k),exception)
+        
         
         %put IDs that didn't run into table
         ID2(hh,1)=ids(k); 

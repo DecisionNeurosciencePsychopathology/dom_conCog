@@ -13,7 +13,7 @@ end
 %Take care of file creations - the slashes are needed (for now)
 data_dir_str= sprintf('subjects\\%s',id);
 filename = sprintf('regs\\%s\\shark%s.mat', id,id);
-data_dump_str=sprintf('regs\\%s',id);
+data_dump_str=sprintf('regs\\%s\\%s',id,id);
 
 if ~exist(data_dump_str,'file')
     mkdir(data_dump_str)
@@ -276,6 +276,7 @@ for block_n=1:b.total_blocks
     event_beg = sort([stim1_ons_ms stim2_ons_ms]);
     event_end=sort([(choice1_ons_ms+isitime) (rew_ons_ms+moneytime)]);
     [b.stim_times.feed_fsl,b.stim_times.feed_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'trialNoJitters',1);
+    
     %Decision 1
     event_beg = b.stim1_onset;
     event_end = choice1_ons_ms+isitime;
@@ -315,6 +316,13 @@ for block_n=1:b.total_blocks
     b.right_left_index(2:2:end) = b.right_left_index_level_2;
     [b.stim_times.right_left_fsl,b.stim_times.right_left_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'right_left_index',b.right_left_index);
     
+    %All decisions
+    event_beg = sort([b.stim1_onset b.stim2_onset]);
+    event_end = sort([choice1_ons_ms+isitime b.choice2_onset_ms+isitime]);
+    b.alldecisions = zeros(1,size(rts1,2)*2);
+    b.alldecisions(1:2:end) = rts1>0;
+    b.alldecisions(2:2:end) = rts2>0;
+    [b.stim_times.dec_fsl,b.stim_times.dec_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'alldecisions',b.alldecisions);
     
     %Feedback
     event_beg = b.rew_onset;
