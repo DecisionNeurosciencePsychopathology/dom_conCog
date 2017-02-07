@@ -25,7 +25,11 @@ for k=1:length(ids)
     
     %move the regressor files to thorndike
     newfolder='/Volumes/bek/explore/shark/regs'; %folder to be place in within thorndike
-    moveregs('dom_conCog',num2str(ids(k)),newfolder);
+    
+    %get file paths
+    scriptName = mfilename('fullpath');
+    [currentpath, filename, fileextension]= fileparts(scriptName);
+    moveregs(currentpath,num2str(ids(k)),newfolder);
     
     %write the ids that successfully ran into a cell
     ID(jj,1)=ids(k);
@@ -34,7 +38,9 @@ for k=1:length(ids)
     task={'shark'};
     Task{jj,1}=task; 
      
-    trialdone=fopen('idlog_shark.txt');
+    
+    %Ask emily about this!
+    trialdone=fopen('idlog_shark.txt', 'a+');
     trialdone=fscanf(trialdone,'%d');
     
     trialdone1=0;

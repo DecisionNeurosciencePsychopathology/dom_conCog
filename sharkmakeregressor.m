@@ -11,13 +11,14 @@ if ~ischar(id)
 end
 
 %Take care of file creations - the slashes are needed (for now)
-data_dir_str= sprintf('subjects\\%s',id);
-filename = sprintf('regs\\%s\\shark%s.mat', id,id);
-data_dump_str=sprintf('regs\\%s\\%s',id,id);
+data_dir_str= sprintf('subjects/%s',id);
+filename = sprintf('regs/%s/shark%s.mat', id,id);
+data_dump_str=sprintf('regs/%s/%s',id,id);
+sub_folder=sprintf('regs/%s',num2str(id));
 
-if ~exist(data_dump_str,'file')
-    mkdir(data_dump_str)
-    fprintf('Creating id specific reg folder in: %s\n\n',data_dump_str);
+if ~exist(sub_folder,'file')
+    mkdir(sub_folder)
+    fprintf('Creating id specific reg folder in: %s\n\n',sub_folder);
 end
 
 
@@ -28,7 +29,7 @@ files = dir(data_dir_str);
 %file_names = extractfield(files, 'name')';
 file_names = {files.name};
 %expression = ('\t*rs\d*'); %Need to add .txt and rerun these guys to grab proper file
-expression = [id '.*_onsets.mat']; %Need to add .txt and rerun these guys to grab proper file
+expression = '.*_onsets.mat'; %Need to add .txt and rerun these guys to grab proper file
 %Regex
 ind = cellfun(@(x)( ~isempty(x) ), regexp(file_names, expression));
 
@@ -49,7 +50,9 @@ start = 0;
 sharktime = 2000; %in ms
 
 %Store id -- might need to change this to a double in the future
-%b.id = id;
+b.id = id;
+b.moneytime=moneytime;
+b.jittertime=jittertime;
 
 %Find trials where there was no response
 %Will we need one for both levels?
@@ -120,9 +123,9 @@ b.rew_onset = rew_ons_ms;
 %Via 3d_info
 old_tr_subjects = {'0495','JANO','MARLE','TCAO'};
 if any(strcmpi(id, old_tr_subjects))
-    scan_tr = .75;
+    b.scan_tr = .75;
 else
-    scan_tr = .6; %Correct TR moving forward 
+    b.scan_tr = .6; %Correct TR moving forward 
 end
 
 tr = 0.1; %10Hz
@@ -140,6 +143,8 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
 %%%%%%NOTE
 %We need to make some external function to automatically grab the number of
 %volumes hard coding will not cut it any longer...
+
+
 
 
 
@@ -163,21 +168,21 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
         %block_length = [1145, 1189];
         b.total_blocks = 2; %Going forward this is the number of correct blocks
         
-        b.id=id;
+%         b.id=id;
         
         %If we didn't already grab the subjects volume run length do it now
-        file_str = sprintf('regs/%s/%s_block_lengh.mat',id,id);
-        if ~exist(file_str,'file')
-            thorn_str={sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark1/',id),...
-                sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark2/',id)};
-         
-            b=findBlockLength(b,thorn_str);
-            block_length = b.block_length; %This is subject specific create that function to grab this from 3dinfo
-            save(file_str,'block_length')
-
-        else
-           load(file_str)
-        end
+%         file_str = sprintf('regs/%s/%s_block_lengh.mat',id,id);
+%         if ~exist(file_str,'file')
+%             thorn_str={sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark1/',id),...
+%                 sprintf('/Volumes/bek/explore/MR_Proc/%s/shark_proc/shark2/',id)};
+%          
+%             b=findBlockLength(b,thorn_str);
+%             block_length = b.block_length; %This is subject specific create that function to grab this from 3dinfo
+%             save(file_str,'block_length')
+% 
+%         else
+%            load(file_str)
+%         end
         
     end
     
@@ -185,6 +190,9 @@ bin_size = 1/frequency_scale_hz*1000; % convert Hz to mseccds ..
 %Create trial index var
 b.trials_per_block=trials/b.total_blocks;
 b.trial_index = 1:b.trials_per_block:b.total_blocks*b.trials_per_block;
+
+%Create censor regressor
+b=createSharkCensorRegressor(b);
 
 for block_n=1:b.total_blocks
     
@@ -332,133 +340,15 @@ for block_n=1:b.total_blocks
     [b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'win_loss_Times',b.win_loss); %wins are 1 loss is -1
     [b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'win_loss_Times_win_minus1',(b.win_loss*-1)); %wins are 1 loss is -1
     %[b.stim_times.winLoss_fsl,b.stim_times.winLoss_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'win_loss_TimesMC',b.win_loss-mean(b.win_loss)); %wins are 1 loss is -1
-    
-    
-    
-    %%%%%%%%%%%%%%%%%%
-    
-    %create to_censor vector
-    %% AD: I haven't checked this
-%     if sum(b.missed) == 0
-%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size( tmp_reg.(['regressors' num2str(block_n)]).decision_level_1));
-%     else
-%         event_beg = b.stim1_onset; event_end =b.rew_onset+(moneytime+jittertime);
-%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
-%             createSimpleRegressor(event_beg, event_end, epoch_window, b.missed);
-%         tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
-%     end
 
-%Censor out any "bad trials" and the shark of the attack trial and next
-%trial
-event_beg = b.stim1_onset(trial_index_1:trial_index_2); event_end =b.rew_onset(trial_index_1:trial_index_2)+(moneytime+jittertime);
-%Add in a bit of code that will just add some time to stim1_onset
-%for the missed trials in event end. Then we should be good until we talk
-%it over with Alex...
-missed_time = 6000; %They have 5 seconds to respond plus a ~1sec x animation? No fixation crosses after missed trial! <- Alex thoughts?
-event_end(b.missed(trial_index_1:trial_index_2)) = b.stim1_onset(b.missed(trial_index_1:trial_index_2)) + missed_time;
-
-%This was the version that would censor the missed trials and the shark
-% tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
-%     createSimpleRegressor(event_beg, event_end, epoch_window,shark_epoch,b.missed(trial_index_1:trial_index_2));
-% tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
-
-
-%Only censor shark
-tmp_reg.(['regressors' num2str(block_n)]).to_censor = ...
-    createSimpleRegressor(event_beg, event_end, epoch_window,shark_epoch,zeros(1,length(b.missed(trial_index_1:trial_index_2))));
-tmp_reg.(['regressors' num2str(block_n)]).to_censor = ones(size(tmp_reg.(['regressors' num2str(block_n)]).to_censor)) - tmp_reg.(['regressors' num2str(block_n)]).to_censor;
-
-
-    
-    % % HRF-convolve all the event regressors
-    % hrfregs = fieldnames(rmfield(tmp_reg.regressors1,{'to_censor','missed_RT'}));
-    %% AD: I would say we don't need to analyze missed RTs
-    hrfregs = fieldnames(rmfield(tmp_reg.regressors1,{'to_censor'}));
-    fprintf('HRF Convolving\n\n')
-    for n = 1:numel(hrfregs)
-        % b.hrfreg1.RT
-        tmp_reg.(['hrfreg' num2str(block_n)]).(hrfregs{n}) = ...
-            conv(1*tmp_reg.(['regressors' num2str(block_n)]).(hrfregs{n}),hemoir);
-        %% ask Alex for gsresample
-        % cut off the tail after convolution and downsample
-        tmp = gsresample(tmp_reg.(['hrfreg' num2str(block_n)]).(hrfregs{n}),10,1./scan_tr);
-        %If the scanner runs for to long the tmp var is too short
-        if length(tmp)<block_length(block_n)
-            zeros_to_add = block_length(block_n)-length(tmp);
-            tmp = [tmp zeros(1,zeros_to_add)];
-        end
-        tmp_reg.(['hrfreg' num2str(block_n)]).(hrfregs{n}) = tmp(1:block_length(block_n)-1); %should be tmp(1:block_length) where block_length = the total number of TRs that the scanner ran
-        
-        fprintf('Percent complete...%.2f\n',n/numel(hrfregs))
-        
-    end
-    
-    
-    % shift the tocensor AND BLOCK regressor by the HRF lag = 5 seconds
-    % we put ALL BOXCARS in HRFREGs FOR SIMPLICITY, but they are not HRF-convolved
-    
-    % NB: the first 5s are censored because they capture HRF to events
-    % preceding the first trial
-    tmp = gsresample( ...
-        [zeros(50,1)' tmp_reg.(['regressors' num2str(block_n)]).to_censor(1:end-51)], ...
-        10,1./scan_tr);
-    %add 12 TRs to to_censor as a fix for scanner running longer
-    
-    %% AD as a stupid hack, we will add an extra volume at the end, 12+1 TRs
-    %%%%tmp = [tmp 1 1 1 1 1 1 1 1 1 1 1 1 1];
-    
-    %tmp = [tmp ones(1,(block_length(block_n)-1)-length(tmp))];
-    tmp = [tmp ones(1,(block_length(block_n))-length(tmp))]; %This minus 1 was causing the censore file to lose a volume for each block
-    
-    % cut off the tail
-    %tmp_reg.(['hrfreg' num2str(block_n)]).to_censor  = floor(tmp(1:block_length(block_n)-1));
-    tmp_reg.(['hrfreg' num2str(block_n)]).to_censor  = floor(tmp(1:block_length(block_n))); %This minus 1 was causing the censore file to lose a volume for each block
-    
-    
 end
-
-b.tmp_regs = tmp_reg;
-
-
-
-%% concatenate everything
-%% CAREFUL here, number of blocks is hard-coded
-fnm = fieldnames(tmp_reg.hrfreg1)';
-% for ct=1:length(fnm)
-%    % b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct}) tmp_reg.hrfreg2.(fnm{ct}) tmp_reg.hrfreg3.(fnm{ct}) tmp_reg.hrfreg4.(fnm{ct})];
-%     b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct}) 0];
-% end
-
-%Added switch case for subjects with irregular trials
-ct=1:length(fnm);
-switch b.total_blocks
-    case 1
-        for ct=1:length(fnm)
-            b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct})];
-        end
-    case 2
-        for ct=1:length(fnm)
-            b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct}) tmp_reg.hrfreg2.(fnm{ct})];
-        end
-    case 3
-        for ct=1:length(fnm)
-            b.hrf_regs.(fnm{ct}) = [tmp_reg.hrfreg1.(fnm{ct}) tmp_reg.hrfreg2.(fnm{ct}) tmp_reg.hrfreg3.(fnm{ct})];
-        end
-    otherwise
-        disp('Error occured somewhere')
-end
-
-%JW:why subtract 1 here?? Commented out 1-(ceil...)
-%b.hrf_regs.to_censor = 1-(ceil(b.hrf_regs.to_censor));
-%b.hrf_regs.to_censor = b.hrf_regs.to_censor(1:length(b.hrf_regs.decision_level_1));
-
-
+   
 %save individual file, see top for path
 save(filename,'b');
 
 %cd('C:/regs/')
 %cd(['/Users/',username,'/Box Sync/Suicide studies/regs/trust_current_regs/'])
-cd(data_dump_str)
+cd(sub_folder)
 %Note the formatting string here currently its %s but it will be %d in
 %future releases
 
@@ -472,7 +362,7 @@ cd(data_dump_str)
 %     b.hrf_regs.feedback' ...                  % 4    feedback
 %     ],'\t');
 
-gdlmwrite(sprintf('shark%s.regs',id),[ ...
+gdlmwrite(sprintf('%sto_censor.regs',id),[ ...
     b.hrf_regs.to_censor' ...                 % 0    trials with responses
     ],'\t');
 
