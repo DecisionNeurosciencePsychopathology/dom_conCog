@@ -1,4 +1,5 @@
 function b = sharkmakeregressor(id)
+%function b = sharkmakeregressor(id)
 % Jon Wilson & Alex Dombrovski
 % 2015-10: Script creation
 % id must be a string for now
@@ -317,17 +318,29 @@ for block_n=1:b.total_blocks
     
     
     %Full motor
-    event_beg = sort([b.stim1_onset b.stim2_onset]);
-    event_end = sort([choice1_ons_ms choice2_ons_ms;]);
+    event_beg = zeros(1,length([b.stim1_onset b.stim2_onset]));
+    event_end = zeros(1,length([b.stim1_onset b.stim2_onset]));
     b.right_left_index = zeros(1,size(b.right_left_index_level_1,2)*2);
+    event_beg(1:2:end) = b.stim1_onset;
+    event_beg(2:2:end) = b.stim2_onset;
+    event_end(1:2:end) = choice1_ons_ms;
+    event_end(2:2:end) = choice2_ons_ms;
+    %event_beg = sort([b.stim1_onset b.stim2_onset]);
+    %event_end = sort([choice1_ons_ms choice2_ons_ms;]);
     b.right_left_index(1:2:end) = b.right_left_index_level_1;
     b.right_left_index(2:2:end) = b.right_left_index_level_2;
     [b.stim_times.right_left_fsl,b.stim_times.right_left_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'right_left_index',b.right_left_index);
     
     %All decisions
-    event_beg = sort([b.stim1_onset b.stim2_onset]);
-    event_end = sort([choice1_ons_ms+isitime b.choice2_onset_ms+isitime]);
+    event_beg = zeros(1,length([b.stim1_onset b.stim2_onset]));
+    event_end = zeros(1,length([b.stim1_onset b.stim2_onset]));
     b.alldecisions = zeros(1,size(rts1,2)*2);
+    event_beg(1:2:end) = b.stim1_onset;
+    event_beg(2:2:end) = b.stim2_onset;
+    event_end(1:2:end) = choice1_ons_ms+isitime;
+    event_end(2:2:end) = choice2_ons_ms+isitime;
+    %event_beg = sort([b.stim1_onset b.stim2_onset]);
+    %event_end = sort([choice1_ons_ms+isitime b.choice2_onset_ms+isitime]);
     b.alldecisions(1:2:end) = rts1>0;
     b.alldecisions(2:2:end) = rts2>0;
     [b.stim_times.dec_fsl,b.stim_times.dec_spmg]=write3Ddeconv_startTimes(b,data_dump_str,event_beg,event_end,'alldecisions',b.alldecisions);

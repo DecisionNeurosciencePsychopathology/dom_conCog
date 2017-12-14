@@ -1,27 +1,36 @@
 clear;
 clc;
 stay_data=[];
-file_list=glob('C:\kod\dom_conCog\shark_data\*onsets.mat');
+file_list=glob('C:\kod\dom_conCog\subjects\*\*onsets.mat');
 for i = 1:length(file_list)
     [s(i),temp_stay_data, td]=run_shark_analysis_using_onsets(file_list{i},i);
+    %TODO need to remove the "trial" field for the one subject, alos one
+    %subject missing data? should be 50...
+    %Quick hack
+    try
+        td=rmfield(td,'trial');
+    catch
+    end
     trial_data(i) = orderfields(td); %You need to remove the fieldnames that JANO and MARLE dont have...
     stay_data = [stay_data temp_stay_data];
-%     stay_shark_data = [stay_shark_data temp_stay_shark_data]; % each subject is a column
-%     blk_data(i,:,:) = temp_blk_data;
+    %     stay_shark_data = [stay_shark_data temp_stay_shark_data]; % each subject is a column
+    %     blk_data(i,:,:) = temp_blk_data;
 end
 
-position = 1;
-for sub = 1:length(trial_data)
-ntrials = length(trial_data(sub).money);
-gee.subject(position:position+ntrials-1,1) = repmat({trial_data(sub).name},ntrials,1);
-gee.stay(position:position+ntrials-1,1) = [trial_data(sub).stay];
-gee.win(position:position+ntrials-1,1) = [trial_data(sub).money];
-gee.common(position:position+ntrials-1,1) = [trial_data(sub).common];
-gee.shark(position:position+ntrials-1,1) = [trial_data(sub).shark];
-gee.trial(position:position+ntrials-1,1) = 1:ntrials;
-position = position + ntrials;
-end
-geeTable = struct2table(gee);
+
+%Fix this...
+% % position = 1;
+% % for sub = 1:length(trial_data)
+% % ntrials = length(trial_data(sub).money);
+% % gee.subject(position:position+ntrials-1,1) = repmat({trial_data(sub).name},ntrials,1);
+% % gee.stay(position:position+ntrials-1,1) = [trial_data(sub).stay];
+% % gee.win(position:position+ntrials-1,1) = [trial_data(sub).money];
+% % gee.common(position:position+ntrials-1,1) = [trial_data(sub).common];
+% % gee.shark(position:position+ntrials-1,1) = [trial_data(sub).shark];
+% % gee.trial(position:position+ntrials-1,1) = 1:ntrials;
+% % position = position + ntrials;
+% % end
+% % geeTable = struct2table(gee);
 %writetable(geeTable,'shark_gee_n=9_050316');
 
 %[win common stay, win rare stay] vs [loss common stay, loss rare stay]
@@ -79,6 +88,6 @@ legend('Common', 'Rare')
 
 
 % first, shark no shark
-[h,p,ci,stats] = ttest([s.win_common_stay_pct]',[s.loss_common_stay_pct]');
+%[h,p,ci,stats] = ttest([s.win_common_stay_pct]',[s.loss_common_stay_pct]');
 
 %% test model-baseness for all trials

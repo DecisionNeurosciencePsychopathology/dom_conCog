@@ -1,94 +1,57 @@
+function makesharkregs
 % created 8.31.2016
+
+
+%Load the sceptic config files and initialize the tracking data.
+%As a new user you will have to create the config files (see
+%https://github.com/DecisionNeurosciencePsychopathology/temporal_instrumental_agent
+%for more help) & set the paths to said file.
+task_data=initialize_task_tracking_data('shark');
+
+%if directories do not exist create them
+if ~exist('regs','dir')
+    mkdir('regs')
+end
 
 %call up subject folder
 dirs=dir('subjects');
 
-jj=1;
-hh=1;
+%destination folder on Thorndike (server) to house regressors
+dest_folder='/Volumes/bek/explore/shark/regs';
 
-%assign ids to variable ids
-i=1;
-for j=1:length(dirs)
-    if length(dirs(j).name)==6
-        x=str2num(dirs(j).name);
-        ids(i)=x;
-        i=i+1;
-    end    
-    j=j+1;
-end
-    
-    
+%get file paths
+scriptName = mfilename('fullpath');
+[currentpath, ~, ~]= fileparts(scriptName);
+
 %run through sharkmakeregressor
-for k=1:length(ids)
-    try
-    sharkmakeregressor(ids(k));
-    
-    %move the regressor files to thorndike
-    newfolder='/Volumes/bek/explore/shark/regs'; %folder to be place in within thorndike
-    
-    %get file paths
-    scriptName = mfilename('fullpath');
-    [currentpath, filename, fileextension]= fileparts(scriptName);
-    moveregs(currentpath,num2str(ids(k)),newfolder);
-    
-    %write the ids that successfully ran into a cell
-    ID(jj,1)=ids(k);
-    
-    
-    task={'shark'};
-    Task{jj,1}=task; 
-     
-    
-    %Ask emily about this!
-    trialdone=fopen('idlog_shark.txt', 'a+');
-    trialdone=fscanf(trialdone,'%d');
-    
-    trialdone1=0;
-    for aa=1:length(trialdone)
-        if trialdone(aa,1) == ids(k)
-            trialdone1=1;
+for k=3:length(dirs)
+    if dirs(k).bytes <=0
+        try
+            %Grab id
+            id=str2double(dirs(k).name);
+            
+            %Update task_tracking data
+            task_data.behave_completed=1;
+            
+            %Process shark data
+            sharkmakeregressor(id);
+            
+            %Update task_tracking data
+            task_data.behave_processed=1;
+            
+            %More the resgressors to the server
+            moveregs(currentpath,id,dest_folder);
+            
+            %write the task data to file
+            record_subj_to_file(id,task_data)
+            
+        catch exception
+            %write the task data to file
+            record_subj_to_file(id,task_data)
+            
+            %errorlog
+            errorlog('shark',id,exception)
         end
     end
-    
-    if trialdone1 == 1
-        td={'yes'};
-    else
-        td={'no'};
-    end
-    fMRI_Preprocess_Complete{jj,1}=td; 
-    jj=jj+1;
-    
-    %turn completed cell into table
-    st=table(ID,Task,fMRI_Preprocess_Complete);
-    save('completed','st');
-    
-    catch exception
-        %errorlog
-        errorlog('shark',ids(k),exception)
-        
-        
-        %put IDs that didn't run into table
-        ID2(hh,1)=ids(k); 
-    
-        task={'shark'};
-        Task2{hh,1}=task; 
-        
-        hh=hh+1;
-        
-        st2=table(ID2,Task2);
-        save('unable_to_run','st2')
-        
-    end
-    
-    
-    if exist('st2')==0
-        ID2=0;
-        Task2={'shark'};
-        st2=table(ID2,Task2);
-        save('unable_to_run','st2')
-    end
-    
-
-    
 end
 
