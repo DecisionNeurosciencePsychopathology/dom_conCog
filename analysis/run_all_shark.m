@@ -1,7 +1,13 @@
+function [shark_table_trialwise, shark_table_subject_table]=run_all_shark()
+
 clear;
 clc;
 stay_data=[];
 file_list=glob('C:\kod\dom_conCog\subjects\*\*onsets.mat');
+
+%Create output for R analysis
+shark_table_trialwise = table();
+
 for i = 1:length(file_list)
     [s(i),temp_stay_data, td]=run_shark_analysis_using_onsets(file_list{i},i);
     %TODO need to remove the "trial" field for the one subject, alos one
@@ -15,6 +21,32 @@ for i = 1:length(file_list)
     stay_data = [stay_data temp_stay_data];
     %     stay_shark_data = [stay_shark_data temp_stay_shark_data]; % each subject is a column
     %     blk_data(i,:,:) = temp_blk_data;
+   
+        
+    
+    
+    %Create a function called update table
+    ID = s(i).id;
+    shark_table_trialwise = update_table(ID, trial_data(i), shark_table_trialwise);
+    
+end
+
+%Make subjectwise_table
+shark_table_subject_table = struct2table(s);
+
+%Merge demogrpahic info
+demos = generate_demogaphics_from_list(shark_table_subject_table.id);
+shark_table_subject_table.Properties.VariableNames{'id'} = 'ID';
+shark_table_subject_table = join(shark_table_subject_table,demos,'Keys','ID');
+
+%Loop over certain variables and replace 0 with nans
+time_vars = {'choice1_ons_ms', 'choice1_ons_sl','choice2_ons_ms', ...
+    'choice2_ons_sl','rew_ons_ms','rew_ons_sl','rts1','rts2','stim1_ons_ms',...
+    'stim1_ons_sl','stim2_ons_ms','stim2_ons_sl', 'choice1','choice2', 'keycode1', 'keycode2','state'};
+
+for time_var = time_vars
+    tmp=shark_table_trialwise.(time_var{:})==0;
+    shark_table_trialwise.(time_var{:})(tmp) = nan;
 end
 
 
@@ -51,7 +83,7 @@ mean_stay_data = mean(stay_data,2);
 figure(8); clf;
 b = bar([mean_stay_data(1:2)'; mean_stay_data(3:end)']);
 b(2).FaceColor = 'r';
-title('Mean of Choice Behavior for subject')
+title('Mean of Choice Behavior for all subjects')
 name = {'Reward'; 'Loss'};
 set(gca,'xticklabel',name,'fontsize',9)
 ylabel('Stay')
@@ -70,7 +102,7 @@ b = bar([[mean_s.win_common_stay_no_shark_pct mean_s.win_rare_stay_no_shark_pct]
          [mean_s.win_common_stay_shark_pct mean_s.win_rare_stay_shark_pct];...
          [mean_s.loss_common_stay_shark_pct mean_s.loss_rare_stay_shark_pct]]);
 b(2).FaceColor = 'r';
-title('Mean of Choice Behavior for subject shark trials')
+title('Mean of Choice Behavior for all subject shark trials')
 %set(b,'xtick',1)
 name = {'Reward-No Shark'; 'Loss- No Shark';'Reward-Shark'; 'Loss-Shark'};
 set(gca,'xticklabel',name,'fontsize',9)
@@ -91,3 +123,38 @@ legend('Common', 'Rare')
 %[h,p,ci,stats] = ttest([s.win_common_stay_pct]',[s.loss_common_stay_pct]');
 
 %% test model-baseness for all trials
+
+
+
+%% sub funcitons
+function shark_table = update_table(id, trial_data, shark_table)
+
+%Create tmp_table for concatination 
+tmp_table = table();
+
+%Grab number of trials subject has
+num_trials = length(trial_data.choice1);
+
+%Repmat the id and set trial var
+tmp_table.id = repmat(id,num_trials,1);
+tmp_table.trial = [1:num_trials]';
+
+%Get sruct names
+trial_data = rmfield(trial_data,'name'); %Already have id
+trial_data = rmfield(trial_data,'warnings'); %Already have id
+fnames = fieldnames(trial_data);
+
+%Pull struct data
+for fname = fnames'
+    if length(trial_data.(fname{:})) > 1
+        tmp_table.(fname{:}) = trial_data.(fname{:})';
+    else
+        tmp_table.(fname{:}) = repmat(trial_data.(fname{:}),num_trials,1);
+    end
+end
+
+%Update table
+
+shark_table = [shark_table; tmp_table];
+
+

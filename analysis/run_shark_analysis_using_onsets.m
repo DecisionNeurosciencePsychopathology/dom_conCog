@@ -9,6 +9,12 @@ data = load(file_name); %Load in data
 contingency_length = length(data.rts1)/4; %blocks = shark|no shark
 block_length = length(data.rts1)/2; %runs = full scanner runs 1, 2, ect or seperating one full contingency run
 
+%Grab the dir id
+expr='\\([0-9]+)\\';
+id = regexp(file_name,expr,'tokens');
+id = str2double(id{:});
+id_str = num2str(id);
+
 %% Create trial indexes of win/loss, common/rare, and stay/switch trials
 %Trial vector
 trial = 1:length(data.money);
@@ -20,10 +26,13 @@ loss_trials = data.money==0;
 %Common/Rare
 common_trials   = (data.choice1==1 & data.state==2) | (data.choice1==2 & data.state==3);
 rare_trials     = (data.choice1==1 & data.state==3) | (data.choice1==2 & data.state==2);
+data.common_trials = common_trials;
 
-%Stay/switch
+%Stay/switch -- index starts at 1 asking Did subject switch from trial 1 to trial 2?
 stay_trials     = data.choice1 == [data.choice1(2:end) 0];
 switch_trials = ~stay_trials;
+switch_trials(end) = 0; %There can't be a switch from trial 100 to 101
+data.switch_trials = switch_trials;
 
 %Interactions
 %Win/loss - common/rare
@@ -62,7 +71,7 @@ fprintf('The number of switch trials were: %d\n\n',sum(switch_trials))
 
 %For those who contingency didn't get saved
 try
-    if (data.contingency || data.name)
+    if (data.contingency || id)
     end
 catch
     if data.attack<50
@@ -71,9 +80,9 @@ catch
         data.contingency=2;
     end
     expression = '(\w{3,6})_shark*';
-    data.name = regexp(file_name,expression,'match');
-    tmp = data.name{1};
-    data.name = tmp(1:4);
+    id = regexp(file_name,expression,'match');
+    tmp = id{1};
+    id = tmp(1:4);
     data = rmfield(data,'ans');
 end
 
@@ -150,7 +159,7 @@ subplot(5,2,sub_plot_num)
 stay_data = [win_common_stay_pct win_rare_stay_pct; loss_common_stay_pct loss_rare_stay_pct];
 b = bar(stay_data);
 b(2).FaceColor = 'r';
-title(['Analysis of Choice Behavior for subject ' data.name])
+title(['Analysis of Choice Behavior for subject ' id_str])
 %set(b,'xtick',1)
 name = {'Reward'; 'Loss'};
 set(gca,'xticklabel',name,'fontsize',9)
@@ -165,7 +174,7 @@ stay_shark_data = [win_common_stay_shark_pct win_common_stay_no_shark_pct; win_r
     loss_common_stay_shark_pct loss_common_stay_no_shark_pct; loss_rare_stay_shark_pct loss_rare_stay_no_shark_pct];
 b = bar(stay_shark_data);
 b(2).FaceColor = 'r';
-title(['Analysis of Choice Behavior for subject ' data.name])
+title(['Analysis of Choice Behavior for subject ' id_str])
 %set(b,'xtick',1)
 name = {'Reward-Shark'; 'Reward-No Shark'; 'Loss-Shark'; 'Loss- No Shark'};
 set(gca,'xticklabel',name,'fontsize',9)
@@ -180,7 +189,8 @@ keep_names = {'attack';'choice1';'choice1_ons_ms';'choice1_ons_sl';'choice2';...
     'choice2_ons_ms';'choice2_ons_sl';'contingency';'keycode1';'keycode2';'money';'name';...
     'rew_ons_ms';'rew_ons_sl';'rts1';'rts2';'state';'stim1_ons_ms';...
     'stim1_ons_sl';'stim2_ons_ms';'stim2_ons_sl';'swap_hist';'totalwon';'trial';'warnings';...
-    'shark';'money';'stay';'common';'name';'ac_outcome';'ad_outcome';'bc_outcome';'bd_outcome';};
+    'shark';'money';'stay';'common';'name';'ac_outcome';'ad_outcome';'bc_outcome';'bd_outcome'; 'switch_trials';...
+    'common_trials';};
 for i = 1:length(d_fnames)
     if ~ismember(d_fnames{i},keep_names)
         data=rmfield(data,d_fnames{i});
@@ -195,23 +205,23 @@ stay_shark_data = [win_common_stay_shark_pct; win_common_stay_no_shark_pct; win_
 
 
 %Save resutls in ret struct
-ret.id = data.name;
+ret.id = id;
 ret.num_wins = sum(win_trials);
 ret.num_loss = sum(loss_trials);
 ret.num_common = sum(common_trials);
 ret.num_rare = sum(rare_trials);
 ret.num_stay = sum(stay_trials);
 ret.num_switch = sum(switch_trials);
-ret.win_common_stay_pct=win_common_stay_pct;
-ret.win_rare_stay_pct=win_rare_stay_pct;
-ret.loss_common_stay_pct=loss_common_stay_pct;
-ret.loss_rare_stay_pct=loss_rare_stay_pct;
-ret.win_common_stay_shark_pct= win_common_stay_shark_pct;
-ret.win_common_stay_no_shark_pct=win_common_stay_no_shark_pct;
-ret.win_rare_stay_shark_pct=win_rare_stay_shark_pct;
-ret.win_rare_stay_no_shark_pct=win_rare_stay_no_shark_pct;
-ret.loss_common_stay_shark_pct=loss_common_stay_shark_pct;
-ret.loss_common_stay_no_shark_pct=loss_common_stay_no_shark_pct;
-ret.loss_rare_stay_shark_pct=loss_rare_stay_shark_pct;
-ret.loss_rare_stay_no_shark_pct=loss_rare_stay_no_shark_pct;
+ret.win_common_stay_pct = win_common_stay_pct;
+ret.win_rare_stay_pct = win_rare_stay_pct;
+ret.loss_common_stay_pct = loss_common_stay_pct;
+ret.loss_rare_stay_pct = loss_rare_stay_pct;
+ret.win_common_stay_shark_pct = win_common_stay_shark_pct;
+ret.win_common_stay_no_shark_pct = win_common_stay_no_shark_pct;
+ret.win_rare_stay_shark_pct = win_rare_stay_shark_pct;
+ret.win_rare_stay_no_shark_pct = win_rare_stay_no_shark_pct;
+ret.loss_common_stay_shark_pct = loss_common_stay_shark_pct;
+ret.loss_common_stay_no_shark_pct = loss_common_stay_no_shark_pct;
+ret.loss_rare_stay_shark_pct = loss_rare_stay_shark_pct;
+ret.loss_rare_stay_no_shark_pct = loss_rare_stay_no_shark_pct;
 ret.contingency = contingency;

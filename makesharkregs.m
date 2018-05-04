@@ -1,11 +1,6 @@
 function makesharkregs
 % created 8.31.2016
 
-
-%Load the sceptic config files and initialize the tracking data.
-%As a new user you will have to create the config files (see
-%https://github.com/DecisionNeurosciencePsychopathology/temporal_instrumental_agent
-%for more help) & set the paths to said file.
 task_data=initialize_task_tracking_data('shark');
 
 %if directories do not exist create them
